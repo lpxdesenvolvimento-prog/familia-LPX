@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Família Connect - App Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        /* Tela de Login */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(255,255,255,0.95);
+            border-radius: 40px;
+            padding: 35px 25px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .perfil-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .perfil-card {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .perfil-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f0ff 0%, #fff 100%);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.2);
+        }
+
+        .perfil-avatar {
+            font-size: 45px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .perfil-nome {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .input-senha {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .input-senha:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .login-btn:active { transform: scale(0.98); }
+
+        /* Header do Feed */
+        .feed-header {
+            background: white;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-area h2 {
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .online-badge {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Menu inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 20px;
+            border-top: 1px solid #eee;
+            z-index: 100;
+        }
+
+        .nav-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+            transform: translateY(-3px);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .main-content {
+            padding-bottom: 70px;
+            padding-top: 10px;
+        }
+
+        /* Posts */
+        .post {
+            background: white;
+            margin-bottom: 12px;
+            border-radius: 0;
+        }
+
+        .post-header {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            background: #f0f0f0;
+        }
+
+        .post-avatar-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .post-info {
+            flex: 1;
+        }
+
+        .post-nome {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .post-data {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .post-media {
+            width: 100%;
+            background: #f5f5f5;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .post-media img, .post-media video {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+        }
+
+        .efeito-rosa {
+            filter: brightness(1.05) saturate(1.2) hue-rotate(-10deg);
+        }
+
+        .efeito-vintage {
+            filter: sepia(0.3) contrast(1.1);
+        }
+
+        .post-legenda {
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .post-actions {
+            padding: 8px 15px;
+            display: flex;
+            gap: 25px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            padding: 6px 0;
+        }
+
+        .action-btn.liked {
+            color: #dc3545;
+        }
+
+        .comentarios-area {
+            padding: 10px 15px;
+            background: #fafafa;
+        }
+
+        .comentario {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .comentario strong {
+            color: #667eea;
+        }
+
+        .add-comentario {
+            padding: 10px 15px;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .add-comentario input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #eee;
+            border-radius: 25px;
+            font-size: 13px;
+            background: #f5f5f5;
+        }
+
+        .add-comentario button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px 18px;
+            cursor: pointer;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 18px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .avatar-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .avatar-option {
+            width: 70px;
+            height: 70px;
+            border-radius: 35px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .avatar-option.selected {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-avatar {
+            border: 2px dashed #ddd;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin: 15px 0;
+        }
+
+        /* Live */
+        .live-container {
+            background: #000;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .live-video {
+            width: 100%;
+            height: 60vh;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .live-info {
+            position: absolute;
+            top: 20px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .live-badge {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .live-actions {
+            position: absolute;
+            right: 15px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .live-chat {
+            background: rgba(0,0,0,0.7);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .live-message {
+            color: white;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .live-message strong {
+            color: #ff69b4;
+        }
+
+        .live-input-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            padding: 10px;
+            background: rgba(0,0,0,0.8);
+            gap: 10px;
+        }
+
+        .live-input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background: #333;
+            color: white;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 55px;
+            height: 55px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 200;
+            border: none;
+            font-size: 28px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app"></div>
+
+    <script>
+        // ==================== USUÁRIOS ====================
+        let USUARIOS = {
+            pai: { id: 'pai', nome: 'Papai 👨', senha: 'pai123', avatar: '👨', avatarImg: null, status: 'online' },
+            mae: { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123', avatar: '👩', avatarImg: null, status: 'online' }
+        };
+
+        let state = {
+            currentUser: null,
+            posts: [],
+            keepLoggedIn: false,
+            activeTab: 'feed',
+            liveActive: false,
+            liveMessages: [],
+            liveLikes: 0
+        };
+
+        const EFETOS = {
+            normal: { nome: 'Normal', classe: '' },
+            rosa: { nome: 'Rosa 🌸', classe: 'efeito-rosa' },
+            vintage: { nome: 'Vintage 📻', classe: 'efeito-vintage' }
+        };
+
+        // ==================== ARMAZENAMENTO ====================
+        function loadData() {
+            const savedPosts = localStorage.getItem('familia_pro_data');
+            if (savedPosts) {
+                state.posts = JSON.parse(savedPosts);
+            } else {
+                state.posts = [
+                    {
+                        id: '1',
+                        usuarioId: 'mae',
+                        usuarioNome: 'Mamãe 👩',
+                        tipo: 'foto',
+                        url: 'https://picsum.photos/id/20/400/400',
+                        legenda: 'Dia especial em família! 💕',
+                        efeito: 'rosa',
+                        data: new Date(Date.now() - 86400000).toISOString(),
+                        curtidas: ['pai'],
+                        comentarios: [{ usuarioId: 'pai', usuarioNome: 'Papai 👨', texto: 'Que lindo! 🥰' }]
+                    },
+                    {
+                        id: '2',
+                        usuarioId: 'pai',
+                        usuarioNome: 'Papai 👨',
+                        tipo: 'foto',
+                        url: 'https://picsum.photos/id/100/400/400',
+                        legenda: 'Almoço em família 🍝',
+                        efeito: 'vintage',
+                        data: new Date(Date.now() - 172800000).toISOString(),
+                        curtidas: ['mae'],
+                        comentarios: [{ usuarioId: 'mae', usuarioNome: 'Mamãe 👩', texto: 'Amei! 😍' }]
+                    }
+                ];
+                saveData();
+            }
+            
+            const savedAvatars = localStorage.getItem('familia_avatars');
+            if (savedAvatars) {
+                const avatars = JSON.parse(savedAvatars);
+                if (avatars.pai) USUARIOS.pai.avatarImg = avatars.pai;
+                if (avatars.mae) USUARIOS.mae.avatarImg = avatars.mae;
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
+        }
+
+        function saveAvatar(usuarioId, avatarData) {
+            const avatars = JSON.parse(localStorage.getItem('familia_avatars') || '{}');
+            avatars[usuarioId] = avatarData;
+            localStorage.setItem('familia_avatars', JSON.stringify(avatars));
+        }
+
+        // ==================== FUNÇÕES DO FEED ====================
+        function adicionarPost(tipo, fileData, legenda, efeito) {
+            const novoPost = {
+                id: Date.now().toString(),
+                usuarioId: state.currentUser.id,
+                usuarioNome: state.currentUser.nome,
+                tipo: tipo,
+                url: fileData,
+                legenda: legenda,
+                efeito: efeito,
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: []
+            };
+            state.posts.unshift(novoPost);
+            saveData();
+            renderizarApp();
+        }
+
+        function curtirPost(postId) {
+            const post = state.posts.find(p => p.id === postId);
+            if (post) {
+                const idx = post.curtidas.indexOf(state.currentUser.id);
+                if (idx === -1) post.curtidas.push(state.currentUser.id);
+                else post.curtidas.splice(idx, 1);
+                saveData();
+                renderizarApp();
+            }
+        }
+
+        function adicionarComentario(postId, texto) {
+            if (!texto.trim()) return;
+            const post = state.posts.find(p => p.id === postId);
+            if (post) {
+                post.comentarios.push({
+                    usuarioId: state.currentUser.id,
+                    usuarioNome: state.currentUser.nome,
+                    texto: texto.trim(),
+                    data: new Date().toISOString()
+                });
+                saveData();
+                renderizarApp();
+            }
+        }
+
+        function excluirPost(postId) {
+            const post = state.posts.find(p => p.id === postId);
+            if (post && post.usuarioId === state.currentUser.id) {
+                if (confirm('Excluir este post?')) {
+                    state.posts = state.posts.filter(p => p.id !== postId);
+                    saveData();
+                    renderizarApp();
+                }
+            }
+        }
+
+        // ==================== LIVE ====================
+        function iniciarLive() {
+            state.liveActive = true;
+            state.liveMessages = [];
+            state.liveLikes = 0;
+            renderizarApp();
+            setTimeout(() => {
+                adicionarMensagemLive('🎥 Live iniciada!', 'Sistema');
+            }, 500);
+        }
+
+        function encerrarLive() {
+            state.liveActive = false;
+            renderizarApp();
+        }
+
+        function adicionarMensagemLive(texto, usuario = null) {
+            state.liveMessages.push({
+                usuario: usuario || state.currentUser.nome,
+                texto: texto,
+                hora: new Date().toLocaleTimeString()
+            });
+            renderizarApp();
+        }
+
+        function curtirLive() {
+            state.liveLikes++;
+            renderizarApp();
+        }
+
+        // ==================== AUTENTICAÇÃO ====================
+        function fazerLogin(perfil, senha, keepLoggedIn) {
+            const usuario = USUARIOS[perfil];
+            if (usuario && usuario.senha === senha) {
+                state.currentUser = { ...usuario };
+                state.keepLoggedIn = keepLoggedIn;
+                
+                if (keepLoggedIn) {
+                    localStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+                    }));
+                } else {
+                    sessionStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 24 * 60 * 60 * 1000
+                    }));
+                }
+                renderizarApp();
+                return true;
+            }
+            return false;
+        }
+
+        function logout() {
+            state.currentUser = null;
+            localStorage.removeItem('familia_session');
+            sessionStorage.removeItem('familia_session');
+            renderizarApp();
+        }
+
+        function checkAutoLogin() {
+            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
+            if (saved) {
+                try {
+                    const session = JSON.parse(saved);
+                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
+                        state.currentUser = { ...USUARIOS[session.userId] };
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            return false;
+        }
+
+        // ==================== MODAIS ====================
+        function modalFotoPerfil() {
+            let emojiSelecionado = state.currentUser.avatar || '👨';
+            let imagemSelecionada = null;
+            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕'];
+            
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>🖼️ Foto do Perfil</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                ${state.currentUser.avatarImg 
+                                    ? `<img src="${state.currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px; object-fit: cover;">`
+                                    : `<div style="font-size: 60px;">${state.currentUser.avatar || '👨'}</div>`
+                                }
+                            </div>
+                            
+                            <div class="avatar-options">
+                                ${emojis.map(e => `
+                                    <div class="avatar-option ${emojiSelecionado === e ? 'selected' : ''}" data-emoji="${e}">
+                                        ${e}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="upload-avatar" id="uploadAvatarArea">
+                                📁 Ou clique para selecionar uma foto da galeria
+                            </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+                            
+                            <button class="login-btn" id="salvarFotoPerfil">💾 Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.querySelectorAll('[data-emoji]').forEach(el => {
+                el.onclick = () => {
+                    document.querySelectorAll('[data-emoji]').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                    emojiSelecionado = el.dataset.emoji;
+                };
+            });
+            
+            const uploadArea = document.getElementById('uploadAvatarArea');
+            const fileInput = document.getElementById('avatarFileInput');
+            
+            uploadArea.onclick = () => fileInput.click();
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        imagemSelecionada = ev.target.result;
+                        USUARIOS[state.currentUser.id].avatarImg = imagemSelecionada;
+                        USUARIOS[state.currentUser.id].avatar = null;
+                        saveAvatar(state.currentUser.id, imagemSelecionada);
+                        state.currentUser = { ...USUARIOS[state.currentUser.id] };
+                        alert('✅ Foto atualizada!');
+                        fecharModal();
+                        renderizarApp();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            document.getElementById('salvarFotoPerfil').onclick = () => {
+                USUARIOS[state.currentUser.id].avatar = emojiSelecionado;
+                USUARIOS[state.currentUser.id].avatarImg = null;
+                saveAvatar(state.currentUser.id, null);
+                state.currentUser = { ...USUARIOS[state.currentUser.id] };
+                alert('✅ Avatar atualizado!');
+                fecharModal();
+                renderizarApp();
+            };
+        }
+
+        function renderizarModalCriacao() {
+            let tipoSelecionado = 'foto';
+            let efeitoSelecionado = 'normal';
+            let arquivoSelecionado = null;
+            
+            const modalHtml = `
+                <div class="modal" id="criarModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Nova publicação</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="perfil-selector" style="margin-bottom: 15px;">
+                                <div class="perfil-card selected" id="tipoFoto" style="flex: 1;">
+                                    <span class="perfil-avatar">📷</span>
+                                    <span>Foto</span>
+                                </div>
+                                <div class="perfil-card" id="tipoVideo" style="flex: 1;">
+                                    <span class="perfil-avatar">🎥</span>
+                                    <span>Vídeo</span>
+                                </div>
+                            </div>
+                            
+                            <label>🎨 Efeitos:</label>
+                            <div class="avatar-options" style="margin-bottom: 15px;">
+                                ${Object.entries(EFETOS).map(([key, ef]) => `
+                                    <div class="avatar-option ${efeitoSelecionado === key ? 'selected' : ''}" data-efeito="${key}">
+                                        ${ef.nome}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="upload-avatar" id="uploadArea">
+                                📁 Clique para selecionar ${tipoSelecionado === 'foto' ? 'uma foto' : 'um vídeo'}
+                            </div>
+                            <div id="previewArea" style="text-align: center; margin: 10px 0; display: none;"></div>
+                            <input type="file" id="fileInput" accept="${tipoSelecionado === 'foto' ? 'image/*' : 'video/*'}" style="display: none;">
+                            
+                            <textarea id="legendaPost" rows="2" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            
+                            <button class="login-btn" id="publicarBtn">📤 Publicar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('tipoFoto').onclick = () => {
+                tipoSelecionado = 'foto';
+                document.getElementById('tipoFoto').classList.add('selected');
+                document.getElementById('tipoVideo').classList.remove('selected');
+                document.getElementById('fileInput').accept = 'image/*';
+                document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar uma foto';
+                document.getElementById('previewArea').style.display = 'none';
+                arquivoSelecionado = null;
+            };
+            
+            document.getElementById('tipoVideo').onclick = () => {
+                tipoSelecionado = 'video';
+                document.getElementById('tipoVideo').classList.add('selected');
+                document.getElementById('tipoFoto').classList.remove('selected');
+                document.getElementById('fileInput').accept = 'video/*';
+                document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar um vídeo';
+                document.getElementById('previewArea').style.display = 'none';
+                arquivoSelecionado = null;
+            };
+            
+            document.querySelectorAll('[data-efeito]').forEach(el => {
+                el.onclick = () => {
+                    document.querySelectorAll('[data-efeito]').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                    efeitoSelecionado = el.dataset.efeito;
+                };
+            });
+            
+            document.getElementById('uploadArea').onclick = () => document.getElementById('fileInput').click();
+            
+            document.getElementById('fileInput').onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    arquivoSelecionado = file;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const preview = document.getElementById('previewArea');
+                        if (tipoSelecionado === 'foto') {
+                            preview.innerHTML = `<img src="${ev.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`;
+                        } else {
+                            preview.innerHTML = `<video src="${ev.target.result}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`;
+                        }
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            document.getElementById('publicarBtn').onclick = () => {
+                if (!arquivoSelecionado) {
+                    alert('Selecione uma foto ou vídeo!');
+                    return;
+                }
+                const legenda = document.getElementById('legendaPost').value;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    adicionarPost(tipoSelecionado, ev.target.result, legenda, efeitoSelecionado);
+                    fecharModal();
+                };
+                reader.readAsDataURL(arquivoSelecionado);
+            };
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('configModal');
+            if (modal) modal.remove();
+            const modalCriar = document.getElementById('criarModal');
+            if (modalCriar) modalCriar.remove();
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function formatarData(dataISO) {
+            const data = new Date(dataISO);
+            const agora = new Date();
+            const diff = agora - data;
+            const minutos = Math.floor(diff / 60000);
+            const horas = Math.floor(diff / 3600000);
+            const dias = Math.floor(diff / 86400000);
+            if (minutos < 1) return 'Agora';
+            if (minutos < 60) return `${minutos} min`;
+            if (horas < 24) return `${horas} h`;
+            if (dias < 7) return `${dias} dias`;
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        function renderizarFeed() {
+            if (state.posts.length === 0) {
+                return '<div class="loading">📭 Nenhum post ainda. Clique no + para adicionar!</div>';
+            }
+            
+            return state.posts.map(post => {
+                const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
+                return `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                ${usuarioPost.avatarImg 
+                                    ? `<img src="${usuarioPost.avatarImg}" class="post-avatar-img">`
+                                    : `<div style="font-size: 25px;">${usuarioPost.avatar || '👤'}</div>`
+                                }
+                            </div>
+                            <div class="post-info">
+                                <div class="post-nome">${post.usuarioNome}</div>
+                                <div class="post-data">${formatarData(post.data)}</div>
+                            </div>
+                            ${post.usuarioId === state.currentUser.id ? `
+                                <button class="icon-btn" onclick="window.excluirPostHandler('${post.id}')" style="font-size: 20px;">⋯</button>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="post-media ${EFETOS[post.efeito]?.classe || ''}">
+                            ${post.tipo === 'foto' 
+                                ? `<img src="${post.url}" alt="Foto" loading="lazy">`
+                                : `<video src="${post.url}" controls preload="metadata"></video>`
+                            }
+                        </div>
+                        
+                        ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
+                        
+                        <div class="post-actions">
+                            <button class="action-btn ${post.curtidas.includes(state.currentUser.id) ? 'liked' : ''}" onclick="window.curtirHandler('${post.id}')">
+                                ❤️ ${post.curtidas.length}
+                            </button>
+                            <button class="action-btn" onclick="window.focarComentario('${post.id}')">
+                                💬 ${post.comentarios.length}
+                            </button>
+                        </div>
+                        
+                        <div class="comentarios-area" id="comentarios-${post.id}">
+                            ${post.comentarios.slice(-3).map(com => `
+                                <div class="comentario">
+                                    <strong>${com.usuarioNome}:</strong> ${com.texto}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="add-comentario">
+                            <input type="text" id="comentarioInput-${post.id}" placeholder="Adicione um comentário...">
+                            <button onclick="window.comentarHandler('${post.id}')">Enviar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderizarLive() {
+            if (!state.liveActive) {
+                return `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 30px;">
+                        <div style="font-size: 80px; margin-bottom: 20px;">📹</div>
+                        <h3 style="margin-bottom: 10px;">Live da Família</h3>
+                        <p style="color: #666; text-align: center; margin-bottom: 30px;">Compartilhe momentos em tempo real</p>
+                        <button class="login-btn" onclick="window.iniciarLiveHandler()" style="width: auto; padding: 15px 30px;">🔴 Iniciar Live</button>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="live-container">
+                    <div class="live-video">
+                        <div style="text-align: center; color: white;">
+                            <div style="font-size: 60px; margin-bottom: 10px;">${state.currentUser.avatar || '👤'}</div>
+                            <div>${state.currentUser.nome} está ao vivo!</div>
+                        </div>
+                    </div>
+                    
+                    <div class="live-info">
+                        <div class="live-badge">🔴 AO VIVO</div>
+                        <div style="color: white;">❤️ ${state.liveLikes}</div>
+                    </div>
+                    
+                    <div class="live-actions">
+                        <button onclick="window.curtirLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">❤️</button>
+                        <button onclick="window.encerrarLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">🔴</button>
+                    </div>
+                    
+                    <div class="live-chat" id="liveChat">
+                        ${state.liveMessages.map(msg => `
+                            <div class="live-message">
+                                <strong>${msg.usuario}:</strong> ${msg.texto}
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="live-input-area">
+                        <input type="text" class="live-input" id="liveInput" placeholder="Digite uma mensagem...">
+                        <button onclick="window.enviarMensagemLiveHandler()" style="background: #ff69b4; border: none; border-radius: 25px; padding: 0 20px; color: white;">Enviar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderizarApp() {
+            const appDiv = document.getElementById('app');
+            
+            if (!state.currentUser) {
+                // Tela de Login
+                appDiv.innerHTML = `
+                    <div class="login-screen">
+                        <div class="login-box">
+                            <h1>📱 Família Connect</h1>
+                            <div class="perfil-selector" id="perfilSelector">
+                                <div class="perfil-card" data-perfil="pai">
+                                    <span class="perfil-avatar">👨</span>
+                                    <span class="perfil-nome">Papai</span>
+                                </div>
+                                <div class="perfil-card" data-perfil="mae">
+                                    <span class="perfil-avatar">👩</span>
+                                    <span class="perfil-nome">Mamãe</span>
+                                </div>
+                            </div>
+                            <input type="password" id="senha" class="input-senha" placeholder="Digite sua senha">
+                            <div class="checkbox-area">
+                                <input type="checkbox" id="keepLogged">
+                                <label>Manter-me conectado</label>
+                            </div>
+                            <button class="login-btn" id="loginBtn">✨ Entrar ✨</button>
+                            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
+                                👨 Senha: pai123 | 👩 Senha: mae123
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                let perfilSelecionado = 'pai';
+                document.querySelectorAll('[data-perfil]').forEach(el => {
+                    el.onclick = () => {
+                        document.querySelectorAll('[data-perfil]').forEach(e => e.classList.remove('selected'));
+                        el.classList.add('selected');
+                        perfilSelecionado = el.dataset.perfil;
+                    };
+                });
+                document.querySelector('[data-perfil="pai"]').classList.add('selected');
+                
+                document.getElementById('loginBtn').onclick = () => {
+                    const senha = document.getElementById('senha').value;
+                    const keep = document.getElementById('keepLogged').checked;
+                    if (!fazerLogin(perfilSelecionado, senha, keep)) {
+                        alert('Senha incorreta!');
+                    }
+                };
+                return;
+            }
+            
+            // Tela principal com Feed/Live
+            let conteudo = '';
+            if (state.activeTab === 'live') {
+                conteudo = renderizarLive();
+            } else {
+                conteudo = `
+                    <div class="feed-header">
+                        <div class="logo-area">
+                            <h2>📱 Família Connect</h2>
+                            <span class="online-badge"></span>
+                        </div>
+                        <div class="header-actions">
+                            <button class="icon-btn" onclick="window.modalFotoPerfil()">🖼️</button>
+                            <button class="icon-btn" onclick="window.logout()">🚪</button>
+                        </div>
+                    </div>
+                    <div class="main-content">
+                        ${renderizarFeed()}
+                    </div>
+                    <button class="fab" id="fabBtn">+</button>
+                `;
+            }
+            
+            const menuHtml = `
+                <div class="bottom-nav">
+                    <div class="nav-item ${state.activeTab === 'feed' ? 'active' : ''}" data-tab="feed">
+                        <div class="nav-icon">📱</div>
+                        <div class="nav-label">Feed</div>
+                    </div>
+                    <div class="nav-item ${state.activeTab === 'live' ? 'active' : ''}" data-tab="live">
+                        <div class="nav-icon">📹</div>
+                        <div class="nav-label">Live</div>
+                    </div>
+                </div>
+            `;
+            
+            appDiv.innerHTML = conteudo + menuHtml;
+            
+            document.querySelectorAll('[data-tab]').forEach(el => {
+                el.onclick = () => {
+                    state.activeTab = el.dataset.tab;
+                    renderizarApp();
+                };
+            });
+            
+            const fab = document.getElementById('fabBtn');
+            if (fab) fab.onclick = () => renderizarModalCriacao();
+        }
+
+        // Handlers globais
+        window.excluirPostHandler = excluirPost;
+        window.curtirHandler = curtirPost;
+        window.comentarHandler = (postId) => {
+            const input = document.getElementById(`comentarioInput-${postId}`);
+            if (input && input.value) {
+                adicionarComentario(postId, input.value);
+                input.value = '';
+            }
+        };
+        window.focarComentario = (postId) => {
+            const input = document.getElementById(`comentarioInput-${postId}`);
+            if (input) input.focus();
+        };
+        window.fecharModal = fecharModal;
+        window.logout = logout;
+        window.modalFotoPerfil = modalFotoPerfil;
+        window.iniciarLiveHandler = iniciarLive;
+        window.encerrarLiveHandler = encerrarLive;
+        window.curtirLiveHandler = curtirLive;
+        window.enviarMensagemLiveHandler = () => {
+            const input = document.getElementById('liveInput');
+            if (input && input.value) {
+                adicionarMensagemLive(input.value);
+                input.value = '';
+            }
+        };
+
+        // Inicializar
+        loadData();
+        if (checkAutoLogin()) {
+            renderizarApp();
+        } else {
+            renderizarApp();
+        }
+    </script>
+</body>
+</html>
