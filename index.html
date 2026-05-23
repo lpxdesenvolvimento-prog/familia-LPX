@@ -474,6 +474,50 @@
             margin: 15px 0;
         }
 
+        /* Grid de seleção de múltiplas fotos */
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .photo-item {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .photo-item.selected {
+            border-color: #667eea;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-check {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
         /* Live */
         .live-container {
             background: #000;
@@ -613,6 +657,11 @@
             padding: 50px;
             color: #999;
         }
+
+        .import-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -751,33 +800,38 @@
             return true;
         }
 
-        function publicarMidia() {
-            const fileInput = document.getElementById('fileInputPost');
-            const legenda = document.getElementById('legendaPost').value;
-            const tipoSelect = document.getElementById('tipoMidia');
-            
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('❌ Selecione uma foto ou vídeo primeiro!');
-                return;
-            }
-            
-            const file = fileInput.files[0];
-            const tipo = tipoSelect.value;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const sucesso = adicionarPost(tipo, e.target.result, legenda);
-                if (sucesso) {
-                    alert('✅ Post publicado com sucesso!');
-                    fecharModal();
-                } else {
-                    alert('❌ Erro ao publicar. Tente novamente.');
+        function adicionarMultiplosPosts(files) {
+            let count = 0;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                    const reader = new FileReader();
+                    reader.onload = (function(fileData) {
+                        return function(e) {
+                            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
+                            const novoPost = {
+                                id: Date.now().toString() + Math.random(),
+                                usuarioId: state.currentUser.id,
+                                usuarioNome: state.currentUser.nome,
+                                tipo: tipo,
+                                url: e.target.result,
+                                legenda: 'Importado da galeria 📸',
+                                data: new Date().toISOString(),
+                                curtidas: [],
+                                comentarios: []
+                            };
+                            state.posts.unshift(novoPost);
+                            count++;
+                            if (count === files.length) {
+                                saveData();
+                                renderizarApp();
+                                alert(`✅ ${count} arquivos importados com sucesso!`);
+                            }
+                        };
+                    })(file);
+                    reader.readAsDataURL(file);
                 }
-            };
-            reader.onerror = function() {
-                alert('❌ Erro ao ler o arquivo.');
-            };
-            reader.readAsDataURL(file);
+            }
         }
 
         function curtirPost(postId) {
@@ -912,13 +966,6 @@
                 return;
             }
             
-            // Criar um post representando a live
-            const liveData = {
-                messages: [...state.liveMessages],
-                likes: state.liveLikes,
-                data: new Date().toISOString()
-            };
-            
             const novoPost = {
                 id: Date.now().toString(),
                 usuarioId: state.currentUser.id,
@@ -928,7 +975,7 @@
                 data: new Date().toISOString(),
                 curtidas: [],
                 comentarios: [],
-                liveMessages: state.liveMessages,
+                liveMessages: [...state.liveMessages],
                 liveLikes: state.liveLikes
             };
             
@@ -1136,6 +1183,7 @@
                             <textarea id="legendaPost" rows="2" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
                             
                             <button class="login-btn" id="publicarBtn">📤 Publicar</button>
+                            <button class="login-btn import-btn" id="importarMultiplasBtn">📁 Importar Múltiplas Fotos/Vídeos</button>
                         </div>
                     </div>
                 </div>
@@ -1154,6 +1202,7 @@
                 document.getElementById('previewArea').style.display = 'none';
                 document.getElementById('previewArea').innerHTML = '';
                 document.getElementById('fileInputPost').value = '';
+                document.getElementById('fileInputPost').accept = 'image/*';
             };
             
             document.getElementById('tipoVideo').onclick = () => {
@@ -1165,6 +1214,7 @@
                 document.getElementById('previewArea').style.display = 'none';
                 document.getElementById('previewArea').innerHTML = '';
                 document.getElementById('fileInputPost').value = '';
+                document.getElementById('fileInputPost').accept = 'video/*';
             };
             
             document.getElementById('uploadArea').onclick = () => document.getElementById('fileInputPost').click();
@@ -1208,6 +1258,23 @@
                     alert('❌ Erro ao ler o arquivo. Tente novamente.');
                 };
                 reader.readAsDataURL(file);
+            };
+            
+            document.getElementById('importarMultiplasBtn').onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.multiple = true;
+                input.accept = 'image/*,video/*';
+                input.onchange = (e) => {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        adicionarMultiplosPosts(files);
+                        fecharModal();
+                    } else {
+                        alert('Selecione pelo menos um arquivo!');
+                    }
+                };
+                input.click();
             };
         }
 
@@ -1536,7 +1603,7 @@
                 criarChuvaEmojis();
             }
         };
-        window.publicarMidia = publicarMidia;
+        window.publicarMidia = null;
 
         // Inicializar
         loadData();
