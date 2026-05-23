@@ -28,7 +28,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.3);
         }
 
-        /* Chuva de corações/emojis */
+        /* Chuva de emojis - CORRIGIDA */
         .emoji-rain {
             position: fixed;
             top: 0;
@@ -41,23 +41,24 @@
         }
 
         .floating-emoji {
-            position: absolute;
-            font-size: 30px;
-            animation: floatUp 2s ease-out forwards;
+            position: fixed;
+            font-size: 35px;
+            animation: floatUp 2.5s ease-out forwards;
             pointer-events: none;
+            z-index: 10000;
         }
 
         @keyframes floatUp {
             0% {
-                transform: translateY(100vh) scale(0.5);
+                transform: translateY(100vh) scale(0.3) rotate(0deg);
                 opacity: 1;
             }
             50% {
-                transform: translateY(50vh) scale(1.2);
-                opacity: 0.8;
+                transform: translateY(50vh) scale(1.2) rotate(180deg);
+                opacity: 0.9;
             }
             100% {
-                transform: translateY(-20vh) scale(0.8);
+                transform: translateY(-10vh) scale(0.8) rotate(360deg);
                 opacity: 0;
             }
         }
@@ -518,6 +519,13 @@
             z-index: 20;
         }
 
+        .camera-control button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
         .live-info {
             position: absolute;
             top: 20px;
@@ -545,6 +553,15 @@
             flex-direction: column;
             gap: 15px;
             z-index: 10;
+        }
+
+        .live-actions button {
+            background: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            padding: 12px;
+            font-size: 28px;
+            cursor: pointer;
         }
 
         .live-chat {
@@ -639,25 +656,25 @@
         // Lista de emojis para chuva
         const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
 
-        // Função para criar chuva de emojis
+        // Função para criar chuva de emojis - CORRIGIDA
         function criarChuvaEmojis(emojiPersonalizado = null) {
             const emojisUsar = emojiPersonalizado ? [emojiPersonalizado] : EMOJIS_RAIN;
             
-            for(let i = 0; i < 15; i++) {
+            for(let i = 0; i < 20; i++) {
                 setTimeout(() => {
                     const emoji = emojisUsar[Math.floor(Math.random() * emojisUsar.length)];
                     const rainDiv = document.createElement('div');
                     rainDiv.className = 'floating-emoji';
                     rainDiv.textContent = emoji;
                     rainDiv.style.left = Math.random() * window.innerWidth + 'px';
-                    rainDiv.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                    rainDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
                     rainDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
                     document.body.appendChild(rainDiv);
                     
                     setTimeout(() => {
-                        rainDiv.remove();
+                        if (rainDiv && rainDiv.remove) rainDiv.remove();
                     }, 2500);
-                }, i * 80);
+                }, i * 60);
             }
         }
 
@@ -666,6 +683,7 @@
             const savedPosts = localStorage.getItem('familia_pro_data');
             if (savedPosts) {
                 state.posts = JSON.parse(savedPosts);
+                console.log('Posts carregados:', state.posts.length);
             } else {
                 state.posts = [
                     {
@@ -711,6 +729,7 @@
 
         function saveData() {
             localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
+            console.log('Dados salvos! Total de posts:', state.posts.length);
         }
 
         function saveAvatar(usuarioId, avatarData) {
@@ -728,6 +747,8 @@
 
         // ==================== FUNÇÕES DO FEED ====================
         function adicionarPost(tipo, fileData, legenda, isLive = false, liveData = null) {
+            console.log('Adicionando post:', tipo, legenda);
+            
             const novoPost = {
                 id: Date.now().toString(),
                 usuarioId: state.currentUser.id,
@@ -753,7 +774,7 @@
 
         function salvarLiveNoFeed() {
             if (!state.liveVideoBlob) {
-                alert('Grave a live primeiro! Para gravar, mantenha a live ativa por alguns segundos.');
+                alert('Aguardando gravação da live... Mantenha a live ativa por alguns segundos.');
                 return;
             }
             
@@ -775,7 +796,6 @@
                 
                 if (isNewLike) {
                     post.curtidas.push(state.currentUser.id);
-                    // Chuva de corações
                     criarChuvaEmojis();
                 } else {
                     post.curtidas.splice(idx, 1);
@@ -838,9 +858,9 @@
                 };
                 mediaRecorder.onstop = () => {
                     state.liveVideoBlob = new Blob(chunks, { type: 'video/mp4' });
-                    console.log('Live gravada com sucesso!', state.liveVideoBlob);
+                    console.log('Live gravada com sucesso!');
                 };
-                mediaRecorder.start(1000); // Grava em chunks de 1 segundo
+                mediaRecorder.start(1000);
                 state.liveStream = { mediaRecorder, stream };
                 
             } catch (err) {
@@ -894,6 +914,12 @@
                 hora: new Date().toLocaleTimeString()
             });
             renderizarApp();
+            
+            // Scroll automático do chat
+            setTimeout(() => {
+                const chat = document.getElementById('liveChat');
+                if (chat) chat.scrollTop = chat.scrollHeight;
+            }, 100);
         }
 
         function curtirLive() {
@@ -1113,7 +1139,7 @@
             return false;
         }
 
-        // ==================== MODAIS ====================
+        // ==================== MODAL DE CRIAÇÃO ====================
         function renderizarModalCriacao() {
             let tipoSelecionado = 'foto';
             let arquivoSelecionado = null;
@@ -1160,6 +1186,7 @@
                 document.getElementById('fileInput').accept = 'image/*';
                 document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar uma foto';
                 document.getElementById('previewArea').style.display = 'none';
+                document.getElementById('previewArea').innerHTML = '';
                 arquivoSelecionado = null;
             };
             
@@ -1170,6 +1197,7 @@
                 document.getElementById('fileInput').accept = 'video/*';
                 document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar um vídeo';
                 document.getElementById('previewArea').style.display = 'none';
+                document.getElementById('previewArea').innerHTML = '';
                 arquivoSelecionado = null;
             };
             
@@ -1195,7 +1223,7 @@
             
             document.getElementById('publicarBtn').onclick = () => {
                 if (!arquivoSelecionado) {
-                    alert('Selecione uma foto ou vídeo!');
+                    alert('❌ Selecione uma foto ou vídeo primeiro!');
                     return;
                 }
                 const legenda = document.getElementById('legendaPost').value;
@@ -1323,7 +1351,7 @@
                     <div class="live-video">
                         <video id="liveVideoElement" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
                         <div class="camera-control">
-                            <button onclick="window.trocarCameraHandler()" style="background: rgba(0,0,0,0.6); border: none; border-radius: 50%; padding: 12px; font-size: 24px; cursor: pointer;">🔄</button>
+                            <button onclick="window.trocarCameraHandler()">🔄</button>
                         </div>
                     </div>
                     
@@ -1333,9 +1361,9 @@
                     </div>
                     
                     <div class="live-actions">
-                        <button onclick="window.curtirLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">❤️</button>
-                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border: none; border-radius: 25px; padding: 8px 12px; color: white; cursor: pointer; font-size: 12px;">💾 Salvar Live</button>
-                        <button onclick="window.encerrarLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">🔴</button>
+                        <button onclick="window.curtirLiveHandler()">❤️</button>
+                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border-radius: 25px; font-size: 16px;">💾</button>
+                        <button onclick="window.encerrarLiveHandler()">🔴</button>
                     </div>
                     
                     <div class="live-chat" id="liveChat">
@@ -1348,7 +1376,7 @@
                     
                     <div class="live-input-area">
                         <input type="text" class="live-input" id="liveInput" placeholder="Digite uma mensagem...">
-                        <button onclick="window.enviarMensagemLiveHandler()" style="background: #ff69b4; border: none; border-radius: 25px; padding: 0 20px; color: white;">Enviar</button>
+                        <button onclick="window.enviarMensagemLiveHandler()">Enviar</button>
                     </div>
                 </div>
             `;
