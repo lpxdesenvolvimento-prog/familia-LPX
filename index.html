@@ -28,8 +28,8 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.3);
         }
 
-        /* Chuva de emojis - CORRIGIDA */
-        .emoji-rain {
+        /* Chuva de emojis */
+        .emoji-container {
             position: fixed;
             top: 0;
             left: 0;
@@ -41,24 +41,23 @@
         }
 
         .floating-emoji {
-            position: fixed;
-            font-size: 35px;
+            position: absolute;
+            font-size: 30px;
             animation: floatUp 2.5s ease-out forwards;
             pointer-events: none;
-            z-index: 10000;
         }
 
         @keyframes floatUp {
             0% {
-                transform: translateY(100vh) scale(0.3) rotate(0deg);
+                transform: translateY(100vh) scale(0.5) rotate(0deg);
                 opacity: 1;
             }
             50% {
                 transform: translateY(50vh) scale(1.2) rotate(180deg);
-                opacity: 0.9;
+                opacity: 0.8;
             }
             100% {
-                transform: translateY(-10vh) scale(0.8) rotate(360deg);
+                transform: translateY(-20vh) scale(0.8) rotate(360deg);
                 opacity: 0;
             }
         }
@@ -114,7 +113,6 @@
         .perfil-card.selected {
             border-color: #667eea;
             background: linear-gradient(135deg, #f0f0ff 0%, #fff 100%);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.2);
         }
 
         .perfil-avatar {
@@ -135,11 +133,6 @@
             border-radius: 15px;
             font-size: 16px;
             margin-bottom: 15px;
-        }
-
-        .input-senha:focus {
-            outline: none;
-            border-color: #667eea;
         }
 
         .checkbox-area {
@@ -356,11 +349,6 @@
             color: #666;
             cursor: pointer;
             padding: 6px 0;
-            transition: transform 0.2s;
-        }
-
-        .action-btn:active {
-            transform: scale(1.1);
         }
 
         .action-btn.liked {
@@ -497,9 +485,6 @@
             width: 100%;
             height: 60vh;
             background: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
         }
 
@@ -650,29 +635,32 @@
             liveLikes: 0,
             liveStream: null,
             cameraFacing: 'user',
-            liveVideoBlob: null
+            liveVideoChunks: []
         };
 
         // Lista de emojis para chuva
         const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
 
-        // Função para criar chuva de emojis - CORRIGIDA
-        function criarChuvaEmojis(emojiPersonalizado = null) {
-            const emojisUsar = emojiPersonalizado ? [emojiPersonalizado] : EMOJIS_RAIN;
+        // Função para criar chuva de emojis
+        function criarChuvaEmojis() {
+            const container = document.createElement('div');
+            container.className = 'emoji-container';
+            document.body.appendChild(container);
             
-            for(let i = 0; i < 20; i++) {
+            for(let i = 0; i < 25; i++) {
                 setTimeout(() => {
-                    const emoji = emojisUsar[Math.floor(Math.random() * emojisUsar.length)];
-                    const rainDiv = document.createElement('div');
-                    rainDiv.className = 'floating-emoji';
-                    rainDiv.textContent = emoji;
-                    rainDiv.style.left = Math.random() * window.innerWidth + 'px';
-                    rainDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
-                    rainDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
-                    document.body.appendChild(rainDiv);
+                    const emoji = EMOJIS_RAIN[Math.floor(Math.random() * EMOJIS_RAIN.length)];
+                    const emojiDiv = document.createElement('div');
+                    emojiDiv.className = 'floating-emoji';
+                    emojiDiv.textContent = emoji;
+                    emojiDiv.style.left = Math.random() * 100 + '%';
+                    emojiDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
+                    emojiDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                    container.appendChild(emojiDiv);
                     
                     setTimeout(() => {
-                        if (rainDiv && rainDiv.remove) rainDiv.remove();
+                        emojiDiv.remove();
+                        if (container.children.length === 0) container.remove();
                     }, 2500);
                 }, i * 60);
             }
@@ -683,7 +671,6 @@
             const savedPosts = localStorage.getItem('familia_pro_data');
             if (savedPosts) {
                 state.posts = JSON.parse(savedPosts);
-                console.log('Posts carregados:', state.posts.length);
             } else {
                 state.posts = [
                     {
@@ -729,7 +716,6 @@
 
         function saveData() {
             localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
-            console.log('Dados salvos! Total de posts:', state.posts.length);
         }
 
         function saveAvatar(usuarioId, avatarData) {
@@ -746,25 +732,18 @@
         }
 
         // ==================== FUNÇÕES DO FEED ====================
-        function adicionarPost(tipo, fileData, legenda, isLive = false, liveData = null) {
-            console.log('Adicionando post:', tipo, legenda);
-            
+        function adicionarPost(tipo, fileData, legenda) {
             const novoPost = {
                 id: Date.now().toString(),
                 usuarioId: state.currentUser.id,
                 usuarioNome: state.currentUser.nome,
                 tipo: tipo,
                 url: fileData,
-                legenda: legenda + (isLive ? ' 🔴 LIVE' : ''),
+                legenda: legenda,
                 data: new Date().toISOString(),
                 curtidas: [],
                 comentarios: []
             };
-            
-            if (isLive && liveData) {
-                novoPost.liveMessages = liveData.messages;
-                novoPost.liveLikes = liveData.likes;
-            }
             
             state.posts.unshift(novoPost);
             saveData();
@@ -772,29 +751,40 @@
             return true;
         }
 
-        function salvarLiveNoFeed() {
-            if (!state.liveVideoBlob) {
-                alert('Aguardando gravação da live... Mantenha a live ativa por alguns segundos.');
+        function publicarMidia() {
+            const fileInput = document.getElementById('fileInputPost');
+            const legenda = document.getElementById('legendaPost').value;
+            const tipoSelect = document.getElementById('tipoMidia');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('❌ Selecione uma foto ou vídeo primeiro!');
                 return;
             }
             
-            const url = URL.createObjectURL(state.liveVideoBlob);
-            adicionarPost('video', url, 'Live gravada', true, {
-                messages: [...state.liveMessages],
-                likes: state.liveLikes
-            });
+            const file = fileInput.files[0];
+            const tipo = tipoSelect.value;
             
-            alert('✅ Live salva no feed com comentários e curtidas!');
-            encerrarLive();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const sucesso = adicionarPost(tipo, e.target.result, legenda);
+                if (sucesso) {
+                    alert('✅ Post publicado com sucesso!');
+                    fecharModal();
+                } else {
+                    alert('❌ Erro ao publicar. Tente novamente.');
+                }
+            };
+            reader.onerror = function() {
+                alert('❌ Erro ao ler o arquivo.');
+            };
+            reader.readAsDataURL(file);
         }
 
         function curtirPost(postId) {
             const post = state.posts.find(p => p.id === postId);
             if (post) {
                 const idx = post.curtidas.indexOf(state.currentUser.id);
-                const isNewLike = idx === -1;
-                
-                if (isNewLike) {
+                if (idx === -1) {
                     post.curtidas.push(state.currentUser.id);
                     criarChuvaEmojis();
                 } else {
@@ -836,7 +826,7 @@
             state.liveActive = true;
             state.liveMessages = [];
             state.liveLikes = 0;
-            state.liveVideoBlob = null;
+            state.liveVideoChunks = [];
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -850,18 +840,7 @@
                     videoElement.play();
                 }
                 
-                // Gravar live
-                const mediaRecorder = new MediaRecorder(stream);
-                const chunks = [];
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
-                mediaRecorder.onstop = () => {
-                    state.liveVideoBlob = new Blob(chunks, { type: 'video/mp4' });
-                    console.log('Live gravada com sucesso!');
-                };
-                mediaRecorder.start(1000);
-                state.liveStream = { mediaRecorder, stream };
+                state.liveStream = stream;
                 
             } catch (err) {
                 alert('Erro ao acessar câmera: ' + err.message);
@@ -875,11 +854,12 @@
         }
 
         function trocarCamera() {
+            if (!state.liveActive) return;
+            
             state.cameraFacing = state.cameraFacing === 'user' ? 'environment' : 'user';
             
-            if (state.liveActive && state.liveStream) {
-                const oldStream = state.liveStream.stream;
-                oldStream.getTracks().forEach(track => track.stop());
+            if (state.liveStream) {
+                state.liveStream.getTracks().forEach(track => track.stop());
                 
                 navigator.mediaDevices.getUserMedia({
                     video: { facingMode: state.cameraFacing },
@@ -890,7 +870,7 @@
                         videoElement.srcObject = stream;
                         videoElement.play();
                     }
-                    state.liveStream.stream = stream;
+                    state.liveStream = stream;
                 }).catch(err => {
                     alert('Erro ao trocar câmera: ' + err.message);
                 });
@@ -899,8 +879,7 @@
 
         function encerrarLive() {
             if (state.liveStream) {
-                state.liveStream.mediaRecorder.stop();
-                state.liveStream.stream.getTracks().forEach(track => track.stop());
+                state.liveStream.getTracks().forEach(track => track.stop());
                 state.liveStream = null;
             }
             state.liveActive = false;
@@ -915,7 +894,6 @@
             });
             renderizarApp();
             
-            // Scroll automático do chat
             setTimeout(() => {
                 const chat = document.getElementById('liveChat');
                 if (chat) chat.scrollTop = chat.scrollHeight;
@@ -925,6 +903,41 @@
         function curtirLive() {
             state.liveLikes++;
             criarChuvaEmojis();
+            renderizarApp();
+        }
+
+        function salvarLiveNoFeed() {
+            if (state.liveMessages.length === 0) {
+                alert('Nenhuma live para salvar!');
+                return;
+            }
+            
+            // Criar um post representando a live
+            const liveData = {
+                messages: [...state.liveMessages],
+                likes: state.liveLikes,
+                data: new Date().toISOString()
+            };
+            
+            const novoPost = {
+                id: Date.now().toString(),
+                usuarioId: state.currentUser.id,
+                usuarioNome: state.currentUser.nome,
+                tipo: 'live',
+                legenda: `Live gravada 🔴 - ${state.liveMessages.length} comentários, ${state.liveLikes} curtidas`,
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: [],
+                liveMessages: state.liveMessages,
+                liveLikes: state.liveLikes
+            };
+            
+            state.posts.unshift(novoPost);
+            saveData();
+            
+            alert('✅ Live salva no feed com comentários e curtidas!');
+            encerrarLive();
+            state.activeTab = 'feed';
             renderizarApp();
         }
 
@@ -976,7 +989,6 @@
 
         function modalFotoPerfil() {
             let emojiSelecionado = state.currentUser.avatar || '👨';
-            let imagemSelecionada = null;
             const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕', '😍', '🎉', '✨', '🌟'];
             
             const modalHtml = `
@@ -1033,10 +1045,9 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        imagemSelecionada = ev.target.result;
-                        USUARIOS[state.currentUser.id].avatarImg = imagemSelecionada;
+                        USUARIOS[state.currentUser.id].avatarImg = ev.target.result;
                         USUARIOS[state.currentUser.id].avatar = null;
-                        saveAvatar(state.currentUser.id, imagemSelecionada);
+                        saveAvatar(state.currentUser.id, ev.target.result);
                         state.currentUser = { ...USUARIOS[state.currentUser.id] };
                         alert('✅ Foto atualizada!');
                         fecharModal();
@@ -1094,56 +1105,8 @@
             };
         }
 
-        // ==================== AUTENTICAÇÃO ====================
-        function fazerLogin(perfil, senha, keepLoggedIn) {
-            const usuario = USUARIOS[perfil];
-            if (usuario && usuario.senha === senha) {
-                state.currentUser = { ...usuario };
-                state.keepLoggedIn = keepLoggedIn;
-                
-                if (keepLoggedIn) {
-                    localStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
-                    }));
-                } else {
-                    sessionStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 24 * 60 * 60 * 1000
-                    }));
-                }
-                renderizarApp();
-                return true;
-            }
-            return false;
-        }
-
-        function logout() {
-            state.currentUser = null;
-            localStorage.removeItem('familia_session');
-            sessionStorage.removeItem('familia_session');
-            renderizarApp();
-        }
-
-        function checkAutoLogin() {
-            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
-                        state.currentUser = { ...USUARIOS[session.userId] };
-                        return true;
-                    }
-                } catch(e) {}
-            }
-            return false;
-        }
-
         // ==================== MODAL DE CRIAÇÃO ====================
         function renderizarModalCriacao() {
-            let tipoSelecionado = 'foto';
-            let arquivoSelecionado = null;
-            
             const modalHtml = `
                 <div class="modal" id="criarModal">
                     <div class="modal-content">
@@ -1162,12 +1125,13 @@
                                     <span>Vídeo</span>
                                 </div>
                             </div>
+                            <input type="hidden" id="tipoMidia" value="foto">
                             
                             <div class="upload-avatar" id="uploadArea">
-                                📁 Clique para selecionar ${tipoSelecionado === 'foto' ? 'uma foto' : 'um vídeo'}
+                                📁 Clique para selecionar uma foto ou vídeo
                             </div>
                             <div id="previewArea" style="text-align: center; margin: 10px 0; display: none;"></div>
-                            <input type="file" id="fileInput" accept="${tipoSelecionado === 'foto' ? 'image/*' : 'video/*'}" style="display: none;">
+                            <input type="file" id="fileInputPost" accept="image/*,video/*" style="display: none;">
                             
                             <textarea id="legendaPost" rows="2" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
                             
@@ -1179,40 +1143,41 @@
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             
+            let tipoSelecionado = 'foto';
+            
             document.getElementById('tipoFoto').onclick = () => {
                 tipoSelecionado = 'foto';
                 document.getElementById('tipoFoto').classList.add('selected');
                 document.getElementById('tipoVideo').classList.remove('selected');
-                document.getElementById('fileInput').accept = 'image/*';
+                document.getElementById('tipoMidia').value = 'foto';
                 document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar uma foto';
                 document.getElementById('previewArea').style.display = 'none';
                 document.getElementById('previewArea').innerHTML = '';
-                arquivoSelecionado = null;
+                document.getElementById('fileInputPost').value = '';
             };
             
             document.getElementById('tipoVideo').onclick = () => {
                 tipoSelecionado = 'video';
                 document.getElementById('tipoVideo').classList.add('selected');
                 document.getElementById('tipoFoto').classList.remove('selected');
-                document.getElementById('fileInput').accept = 'video/*';
+                document.getElementById('tipoMidia').value = 'video';
                 document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar um vídeo';
                 document.getElementById('previewArea').style.display = 'none';
                 document.getElementById('previewArea').innerHTML = '';
-                arquivoSelecionado = null;
+                document.getElementById('fileInputPost').value = '';
             };
             
-            document.getElementById('uploadArea').onclick = () => document.getElementById('fileInput').click();
+            document.getElementById('uploadArea').onclick = () => document.getElementById('fileInputPost').click();
             
-            document.getElementById('fileInput').onchange = (e) => {
+            document.getElementById('fileInputPost').onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    arquivoSelecionado = file;
                     const reader = new FileReader();
                     reader.onload = (ev) => {
                         const preview = document.getElementById('previewArea');
-                        if (tipoSelecionado === 'foto') {
+                        if (file.type.startsWith('image/')) {
                             preview.innerHTML = `<img src="${ev.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`;
-                        } else {
+                        } else if (file.type.startsWith('video/')) {
                             preview.innerHTML = `<video src="${ev.target.result}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`;
                         }
                         preview.style.display = 'block';
@@ -1222,22 +1187,27 @@
             };
             
             document.getElementById('publicarBtn').onclick = () => {
-                if (!arquivoSelecionado) {
+                const fileInput = document.getElementById('fileInputPost');
+                if (!fileInput.files || fileInput.files.length === 0) {
                     alert('❌ Selecione uma foto ou vídeo primeiro!');
                     return;
                 }
+                
+                const file = fileInput.files[0];
                 const legenda = document.getElementById('legendaPost').value;
+                const tipo = document.getElementById('tipoMidia').value;
+                
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const sucesso = adicionarPost(tipoSelecionado, ev.target.result, legenda);
-                    if (sucesso) {
-                        alert('✅ Post publicado com sucesso!');
-                        fecharModal();
-                    } else {
-                        alert('❌ Erro ao publicar. Tente novamente.');
-                    }
+                reader.onload = function(e) {
+                    adicionarPost(tipo, e.target.result, legenda);
+                    alert('✅ Post publicado com sucesso!');
+                    fecharModal();
+                    renderizarApp();
                 };
-                reader.readAsDataURL(arquivoSelecionado);
+                reader.onerror = function() {
+                    alert('❌ Erro ao ler o arquivo. Tente novamente.');
+                };
+                reader.readAsDataURL(file);
             };
         }
 
@@ -1270,6 +1240,8 @@
             
             return state.posts.map(post => {
                 const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
+                const isLivePost = post.liveMessages && post.liveMessages.length > 0;
+                
                 return `
                     <div class="post">
                         <div class="post-header">
@@ -1291,9 +1263,15 @@
                         <div class="post-media">
                             ${post.tipo === 'foto' 
                                 ? `<img src="${post.url}" alt="Foto" loading="lazy">`
-                                : `<video src="${post.url}" controls preload="metadata"></video>`
+                                : post.tipo === 'live'
+                                    ? `<div style="padding: 50px; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 10px;">
+                                        <div style="font-size: 48px;">🔴</div>
+                                        <div style="margin-top: 10px;">Live gravada</div>
+                                        <div style="margin-top: 5px; font-size: 12px;">❤️ ${post.liveLikes || 0} curtidas | 💬 ${post.liveMessages?.length || 0} comentários</div>
+                                       </div>`
+                                    : `<video src="${post.url}" controls preload="metadata"></video>`
                             }
-                            ${post.liveMessages ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
+                            ${isLivePost ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
                         </div>
                         
                         ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
@@ -1316,7 +1294,7 @@
                             ${post.liveMessages && post.liveMessages.length > 0 ? `
                                 <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
                                     <div style="font-size: 11px; color: #999; margin-bottom: 5px;">📹 Comentários da Live:</div>
-                                    ${post.liveMessages.slice(-2).map(msg => `
+                                    ${post.liveMessages.slice(-3).map(msg => `
                                         <div class="comentario" style="font-size: 11px;">
                                             <strong>${msg.usuario}:</strong> ${msg.texto}
                                         </div>
@@ -1481,6 +1459,51 @@
             if (fab) fab.onclick = () => renderizarModalCriacao();
         }
 
+        // ==================== AUTENTICAÇÃO ====================
+        function fazerLogin(perfil, senha, keepLoggedIn) {
+            const usuario = USUARIOS[perfil];
+            if (usuario && usuario.senha === senha) {
+                state.currentUser = { ...usuario };
+                state.keepLoggedIn = keepLoggedIn;
+                
+                if (keepLoggedIn) {
+                    localStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+                    }));
+                } else {
+                    sessionStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 24 * 60 * 60 * 1000
+                    }));
+                }
+                renderizarApp();
+                return true;
+            }
+            return false;
+        }
+
+        function logout() {
+            state.currentUser = null;
+            localStorage.removeItem('familia_session');
+            sessionStorage.removeItem('familia_session');
+            renderizarApp();
+        }
+
+        function checkAutoLogin() {
+            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
+            if (saved) {
+                try {
+                    const session = JSON.parse(saved);
+                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
+                        state.currentUser = { ...USUARIOS[session.userId] };
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            return false;
+        }
+
         // Handlers globais
         window.excluirPostHandler = excluirPost;
         window.curtirHandler = curtirPost;
@@ -1510,9 +1533,10 @@
             if (input && input.value) {
                 adicionarMensagemLive(input.value);
                 input.value = '';
-                criarChuvaEmojis('💬');
+                criarChuvaEmojis();
             }
         };
+        window.publicarMidia = publicarMidia;
 
         // Inicializar
         loadData();
