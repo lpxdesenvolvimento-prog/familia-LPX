@@ -3,7 +3,7 @@
 App para compartilhar momentos em família.
 
 ## 🔗 Link do App
-https://lpxdesenvolvimento-prog.github.io/familia-app/
+https://lpxdesenvolvimento-prog.github.io/familia-LPX/
 
 ## 🔐 Senhas
 - Pai: pai123
