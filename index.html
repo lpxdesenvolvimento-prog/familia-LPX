@@ -16,6 +16,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #1a1a2e;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .app {
@@ -25,6 +26,40 @@
             min-height: 100vh;
             position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        /* Chuva de corações/emojis */
+        .emoji-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 30px;
+            animation: floatUp 2s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0.5);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(50vh) scale(1.2);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-20vh) scale(0.8);
+                opacity: 0;
+            }
         }
 
         /* Tela de Login */
@@ -297,14 +332,6 @@
             z-index: 5;
         }
 
-        .efeito-rosa {
-            filter: brightness(1.05) saturate(1.2) hue-rotate(-10deg);
-        }
-
-        .efeito-vintage {
-            filter: sepia(0.3) contrast(1.1);
-        }
-
         .post-legenda {
             padding: 12px 15px;
             font-size: 14px;
@@ -328,6 +355,11 @@
             color: #666;
             cursor: pointer;
             padding: 6px 0;
+            transition: transform 0.2s;
+        }
+
+        .action-btn:active {
+            transform: scale(1.1);
         }
 
         .action-btn.liked {
@@ -556,16 +588,6 @@
             color: white;
         }
 
-        .btn-salvar-live {
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 8px 18px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
         .fab {
             position: fixed;
             bottom: 80px;
@@ -610,15 +632,34 @@
             liveMessages: [],
             liveLikes: 0,
             liveStream: null,
-            cameraFacing: 'user', // 'user' (frontal) ou 'environment' (traseira)
+            cameraFacing: 'user',
             liveVideoBlob: null
         };
 
-        const EFETOS = {
-            normal: { nome: 'Normal', classe: '' },
-            rosa: { nome: 'Rosa 🌸', classe: 'efeito-rosa' },
-            vintage: { nome: 'Vintage 📻', classe: 'efeito-vintage' }
-        };
+        // Lista de emojis para chuva
+        const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
+
+        // Função para criar chuva de emojis
+        function criarChuvaEmojis(emojiPersonalizado = null) {
+            const emojisUsar = emojiPersonalizado ? [emojiPersonalizado] : EMOJIS_RAIN;
+            
+            for(let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const emoji = emojisUsar[Math.floor(Math.random() * emojisUsar.length)];
+                    const rainDiv = document.createElement('div');
+                    rainDiv.className = 'floating-emoji';
+                    rainDiv.textContent = emoji;
+                    rainDiv.style.left = Math.random() * window.innerWidth + 'px';
+                    rainDiv.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                    rainDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                    document.body.appendChild(rainDiv);
+                    
+                    setTimeout(() => {
+                        rainDiv.remove();
+                    }, 2500);
+                }, i * 80);
+            }
+        }
 
         // ==================== ARMAZENAMENTO ====================
         function loadData() {
@@ -634,7 +675,6 @@
                         tipo: 'foto',
                         url: 'https://picsum.photos/id/20/400/400',
                         legenda: 'Dia especial em família! 💕',
-                        efeito: 'rosa',
                         data: new Date(Date.now() - 86400000).toISOString(),
                         curtidas: ['pai'],
                         comentarios: [{ usuarioId: 'pai', usuarioNome: 'Papai 👨', texto: 'Que lindo! 🥰' }]
@@ -646,7 +686,6 @@
                         tipo: 'foto',
                         url: 'https://picsum.photos/id/100/400/400',
                         legenda: 'Almoço em família 🍝',
-                        efeito: 'vintage',
                         data: new Date(Date.now() - 172800000).toISOString(),
                         curtidas: ['mae'],
                         comentarios: [{ usuarioId: 'mae', usuarioNome: 'Mamãe 👩', texto: 'Amei! 😍' }]
@@ -688,7 +727,7 @@
         }
 
         // ==================== FUNÇÕES DO FEED ====================
-        function adicionarPost(tipo, fileData, legenda, efeito, isLive = false, liveData = null) {
+        function adicionarPost(tipo, fileData, legenda, isLive = false, liveData = null) {
             const novoPost = {
                 id: Date.now().toString(),
                 usuarioId: state.currentUser.id,
@@ -696,8 +735,6 @@
                 tipo: tipo,
                 url: fileData,
                 legenda: legenda + (isLive ? ' 🔴 LIVE' : ''),
-                efeito: efeito,
-                isLive: isLive,
                 data: new Date().toISOString(),
                 curtidas: [],
                 comentarios: []
@@ -711,16 +748,17 @@
             state.posts.unshift(novoPost);
             saveData();
             renderizarApp();
+            return true;
         }
 
         function salvarLiveNoFeed() {
             if (!state.liveVideoBlob) {
-                alert('Grave a live primeiro!');
+                alert('Grave a live primeiro! Para gravar, mantenha a live ativa por alguns segundos.');
                 return;
             }
             
             const url = URL.createObjectURL(state.liveVideoBlob);
-            adicionarPost('video', url, 'Live gravada', 'normal', true, {
+            adicionarPost('video', url, 'Live gravada', true, {
                 messages: [...state.liveMessages],
                 likes: state.liveLikes
             });
@@ -733,8 +771,15 @@
             const post = state.posts.find(p => p.id === postId);
             if (post) {
                 const idx = post.curtidas.indexOf(state.currentUser.id);
-                if (idx === -1) post.curtidas.push(state.currentUser.id);
-                else post.curtidas.splice(idx, 1);
+                const isNewLike = idx === -1;
+                
+                if (isNewLike) {
+                    post.curtidas.push(state.currentUser.id);
+                    // Chuva de corações
+                    criarChuvaEmojis();
+                } else {
+                    post.curtidas.splice(idx, 1);
+                }
                 saveData();
                 renderizarApp();
             }
@@ -771,8 +816,8 @@
             state.liveActive = true;
             state.liveMessages = [];
             state.liveLikes = 0;
+            state.liveVideoBlob = null;
             
-            // Iniciar captura de vídeo
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: state.cameraFacing },
@@ -788,15 +833,19 @@
                 // Gravar live
                 const mediaRecorder = new MediaRecorder(stream);
                 const chunks = [];
-                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
                 mediaRecorder.onstop = () => {
                     state.liveVideoBlob = new Blob(chunks, { type: 'video/mp4' });
+                    console.log('Live gravada com sucesso!', state.liveVideoBlob);
                 };
-                mediaRecorder.start();
+                mediaRecorder.start(1000); // Grava em chunks de 1 segundo
                 state.liveStream = { mediaRecorder, stream };
                 
             } catch (err) {
                 alert('Erro ao acessar câmera: ' + err.message);
+                state.liveActive = false;
             }
             
             renderizarApp();
@@ -809,7 +858,6 @@
             state.cameraFacing = state.cameraFacing === 'user' ? 'environment' : 'user';
             
             if (state.liveActive && state.liveStream) {
-                // Reiniciar stream com nova câmera
                 const oldStream = state.liveStream.stream;
                 oldStream.getTracks().forEach(track => track.stop());
                 
@@ -850,6 +898,7 @@
 
         function curtirLive() {
             state.liveLikes++;
+            criarChuvaEmojis();
             renderizarApp();
         }
 
@@ -902,7 +951,7 @@
         function modalFotoPerfil() {
             let emojiSelecionado = state.currentUser.avatar || '👨';
             let imagemSelecionada = null;
-            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕'];
+            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕', '😍', '🎉', '✨', '🌟'];
             
             const modalHtml = `
                 <div class="modal" id="configModal">
@@ -1000,7 +1049,7 @@
                             </div>
                             
                             <button class="login-btn" id="btnAlterarSenha">🔐 Alterar Senha</button>
-                            <button class="login-btn btn-secundario" id="btnFotoPerfil" style="margin-top: 10px; background: #6c757d;">🖼️ Mudar Foto</button>
+                            <button class="login-btn" id="btnFotoPerfil" style="margin-top: 10px; background: #6c757d;">🖼️ Mudar Foto</button>
                         </div>
                     </div>
                 </div>
@@ -1067,7 +1116,6 @@
         // ==================== MODAIS ====================
         function renderizarModalCriacao() {
             let tipoSelecionado = 'foto';
-            let efeitoSelecionado = 'normal';
             let arquivoSelecionado = null;
             
             const modalHtml = `
@@ -1087,15 +1135,6 @@
                                     <span class="perfil-avatar">🎥</span>
                                     <span>Vídeo</span>
                                 </div>
-                            </div>
-                            
-                            <label>🎨 Efeitos:</label>
-                            <div class="avatar-options" style="margin-bottom: 15px;">
-                                ${Object.entries(EFETOS).map(([key, ef]) => `
-                                    <div class="avatar-option ${efeitoSelecionado === key ? 'selected' : ''}" data-efeito="${key}">
-                                        ${ef.nome}
-                                    </div>
-                                `).join('')}
                             </div>
                             
                             <div class="upload-avatar" id="uploadArea">
@@ -1134,14 +1173,6 @@
                 arquivoSelecionado = null;
             };
             
-            document.querySelectorAll('[data-efeito]').forEach(el => {
-                el.onclick = () => {
-                    document.querySelectorAll('[data-efeito]').forEach(e => e.classList.remove('selected'));
-                    el.classList.add('selected');
-                    efeitoSelecionado = el.dataset.efeito;
-                };
-            });
-            
             document.getElementById('uploadArea').onclick = () => document.getElementById('fileInput').click();
             
             document.getElementById('fileInput').onchange = (e) => {
@@ -1170,8 +1201,13 @@
                 const legenda = document.getElementById('legendaPost').value;
                 const reader = new FileReader();
                 reader.onload = (ev) => {
-                    adicionarPost(tipoSelecionado, ev.target.result, legenda, efeitoSelecionado);
-                    fecharModal();
+                    const sucesso = adicionarPost(tipoSelecionado, ev.target.result, legenda);
+                    if (sucesso) {
+                        alert('✅ Post publicado com sucesso!');
+                        fecharModal();
+                    } else {
+                        alert('❌ Erro ao publicar. Tente novamente.');
+                    }
                 };
                 reader.readAsDataURL(arquivoSelecionado);
             };
@@ -1224,12 +1260,12 @@
                             ` : ''}
                         </div>
                         
-                        <div class="post-media ${EFETOS[post.efeito]?.classe || ''}">
-                            ${post.isLive && post.tipo === 'video' ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
+                        <div class="post-media">
                             ${post.tipo === 'foto' 
                                 ? `<img src="${post.url}" alt="Foto" loading="lazy">`
                                 : `<video src="${post.url}" controls preload="metadata"></video>`
                             }
+                            ${post.liveMessages ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
                         </div>
                         
                         ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
@@ -1287,7 +1323,7 @@
                     <div class="live-video">
                         <video id="liveVideoElement" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
                         <div class="camera-control">
-                            <button onclick="window.trocarCameraHandler()" style="background: rgba(0,0,0,0.6); border: none; border-radius: 50%; padding: 10px; font-size: 24px; cursor: pointer;">🔄</button>
+                            <button onclick="window.trocarCameraHandler()" style="background: rgba(0,0,0,0.6); border: none; border-radius: 50%; padding: 12px; font-size: 24px; cursor: pointer;">🔄</button>
                         </div>
                     </div>
                     
@@ -1322,7 +1358,6 @@
             const appDiv = document.getElementById('app');
             
             if (!state.currentUser) {
-                // Tela de Login
                 appDiv.innerHTML = `
                     <div class="login-screen">
                         <div class="login-box">
@@ -1370,7 +1405,6 @@
                 return;
             }
             
-            // Tela principal com Feed/Live
             let conteudo = '';
             if (state.activeTab === 'live') {
                 conteudo = renderizarLive();
@@ -1448,6 +1482,7 @@
             if (input && input.value) {
                 adicionarMensagemLive(input.value);
                 input.value = '';
+                criarChuvaEmojis('💬');
             }
         };
 
