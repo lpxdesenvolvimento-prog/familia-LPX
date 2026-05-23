@@ -284,6 +284,19 @@
             object-fit: cover;
         }
 
+        .live-badge-post {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 5;
+        }
+
         .efeito-rosa {
             filter: brightness(1.05) saturate(1.2) hue-rotate(-10deg);
         }
@@ -454,6 +467,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+        }
+
+        .live-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            padding: 12px;
+            z-index: 20;
         }
 
         .live-info {
@@ -526,6 +556,16 @@
             color: white;
         }
 
+        .btn-salvar-live {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px 18px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         .fab {
             position: fixed;
             bottom: 80px;
@@ -568,7 +608,10 @@
             activeTab: 'feed',
             liveActive: false,
             liveMessages: [],
-            liveLikes: 0
+            liveLikes: 0,
+            liveStream: null,
+            cameraFacing: 'user', // 'user' (frontal) ou 'environment' (traseira)
+            liveVideoBlob: null
         };
 
         const EFETOS = {
@@ -618,6 +661,13 @@
                 if (avatars.pai) USUARIOS.pai.avatarImg = avatars.pai;
                 if (avatars.mae) USUARIOS.mae.avatarImg = avatars.mae;
             }
+            
+            const savedPasswords = localStorage.getItem('familia_passwords');
+            if (savedPasswords) {
+                const passwords = JSON.parse(savedPasswords);
+                if (passwords.pai) USUARIOS.pai.senha = passwords.pai;
+                if (passwords.mae) USUARIOS.mae.senha = passwords.mae;
+            }
         }
 
         function saveData() {
@@ -630,23 +680,53 @@
             localStorage.setItem('familia_avatars', JSON.stringify(avatars));
         }
 
+        function savePassword(usuarioId, novaSenha) {
+            const passwords = JSON.parse(localStorage.getItem('familia_passwords') || '{}');
+            passwords[usuarioId] = novaSenha;
+            localStorage.setItem('familia_passwords', JSON.stringify(passwords));
+            USUARIOS[usuarioId].senha = novaSenha;
+        }
+
         // ==================== FUNÇÕES DO FEED ====================
-        function adicionarPost(tipo, fileData, legenda, efeito) {
+        function adicionarPost(tipo, fileData, legenda, efeito, isLive = false, liveData = null) {
             const novoPost = {
                 id: Date.now().toString(),
                 usuarioId: state.currentUser.id,
                 usuarioNome: state.currentUser.nome,
                 tipo: tipo,
                 url: fileData,
-                legenda: legenda,
+                legenda: legenda + (isLive ? ' 🔴 LIVE' : ''),
                 efeito: efeito,
+                isLive: isLive,
                 data: new Date().toISOString(),
                 curtidas: [],
                 comentarios: []
             };
+            
+            if (isLive && liveData) {
+                novoPost.liveMessages = liveData.messages;
+                novoPost.liveLikes = liveData.likes;
+            }
+            
             state.posts.unshift(novoPost);
             saveData();
             renderizarApp();
+        }
+
+        function salvarLiveNoFeed() {
+            if (!state.liveVideoBlob) {
+                alert('Grave a live primeiro!');
+                return;
+            }
+            
+            const url = URL.createObjectURL(state.liveVideoBlob);
+            adicionarPost('video', url, 'Live gravada', 'normal', true, {
+                messages: [...state.liveMessages],
+                likes: state.liveLikes
+            });
+            
+            alert('✅ Live salva no feed com comentários e curtidas!');
+            encerrarLive();
         }
 
         function curtirPost(postId) {
@@ -687,17 +767,74 @@
         }
 
         // ==================== LIVE ====================
-        function iniciarLive() {
+        async function iniciarLive() {
             state.liveActive = true;
             state.liveMessages = [];
             state.liveLikes = 0;
+            
+            // Iniciar captura de vídeo
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: state.cameraFacing },
+                    audio: true
+                });
+                
+                const videoElement = document.getElementById('liveVideoElement');
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                }
+                
+                // Gravar live
+                const mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    state.liveVideoBlob = new Blob(chunks, { type: 'video/mp4' });
+                };
+                mediaRecorder.start();
+                state.liveStream = { mediaRecorder, stream };
+                
+            } catch (err) {
+                alert('Erro ao acessar câmera: ' + err.message);
+            }
+            
             renderizarApp();
             setTimeout(() => {
                 adicionarMensagemLive('🎥 Live iniciada!', 'Sistema');
             }, 500);
         }
 
+        function trocarCamera() {
+            state.cameraFacing = state.cameraFacing === 'user' ? 'environment' : 'user';
+            
+            if (state.liveActive && state.liveStream) {
+                // Reiniciar stream com nova câmera
+                const oldStream = state.liveStream.stream;
+                oldStream.getTracks().forEach(track => track.stop());
+                
+                navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: state.cameraFacing },
+                    audio: true
+                }).then(stream => {
+                    const videoElement = document.getElementById('liveVideoElement');
+                    if (videoElement) {
+                        videoElement.srcObject = stream;
+                        videoElement.play();
+                    }
+                    state.liveStream.stream = stream;
+                }).catch(err => {
+                    alert('Erro ao trocar câmera: ' + err.message);
+                });
+            }
+        }
+
         function encerrarLive() {
+            if (state.liveStream) {
+                state.liveStream.mediaRecorder.stop();
+                state.liveStream.stream.getTracks().forEach(track => track.stop());
+                state.liveStream = null;
+            }
             state.liveActive = false;
             renderizarApp();
         }
@@ -716,52 +853,52 @@
             renderizarApp();
         }
 
-        // ==================== AUTENTICAÇÃO ====================
-        function fazerLogin(perfil, senha, keepLoggedIn) {
-            const usuario = USUARIOS[perfil];
-            if (usuario && usuario.senha === senha) {
-                state.currentUser = { ...usuario };
-                state.keepLoggedIn = keepLoggedIn;
+        // ==================== PERFIL / SENHA ====================
+        function modalAlterarSenha() {
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>🔐 Alterar Senha</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="password" id="senhaAtual" class="modal-input" placeholder="Senha atual">
+                            <input type="password" id="novaSenha" class="modal-input" placeholder="Nova senha (mínimo 4 caracteres)">
+                            <input type="password" id="confirmarSenha" class="modal-input" placeholder="Confirmar nova senha">
+                            <button class="login-btn" id="confirmarAlterarSenha">✅ Alterar Senha</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('confirmarAlterarSenha').onclick = () => {
+                const atual = document.getElementById('senhaAtual').value;
+                const nova = document.getElementById('novaSenha').value;
+                const confirmar = document.getElementById('confirmarSenha').value;
                 
-                if (keepLoggedIn) {
-                    localStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
-                    }));
-                } else {
-                    sessionStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 24 * 60 * 60 * 1000
-                    }));
+                if (atual !== state.currentUser.senha) {
+                    alert('❌ Senha atual incorreta!');
+                    return;
                 }
-                renderizarApp();
-                return true;
-            }
-            return false;
+                if (nova !== confirmar) {
+                    alert('❌ Nova senha e confirmação não coincidem!');
+                    return;
+                }
+                if (nova.length < 4) {
+                    alert('❌ A senha deve ter pelo menos 4 caracteres!');
+                    return;
+                }
+                
+                savePassword(state.currentUser.id, nova);
+                state.currentUser.senha = nova;
+                alert('✅ Senha alterada com sucesso!');
+                fecharModal();
+            };
         }
 
-        function logout() {
-            state.currentUser = null;
-            localStorage.removeItem('familia_session');
-            sessionStorage.removeItem('familia_session');
-            renderizarApp();
-        }
-
-        function checkAutoLogin() {
-            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
-                        state.currentUser = { ...USUARIOS[session.userId] };
-                        return true;
-                    }
-                } catch(e) {}
-            }
-            return false;
-        }
-
-        // ==================== MODAIS ====================
         function modalFotoPerfil() {
             let emojiSelecionado = state.currentUser.avatar || '👨';
             let imagemSelecionada = null;
@@ -845,6 +982,89 @@
             };
         }
 
+        function modalPerfil() {
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>⚙️ Configurações</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                ${state.currentUser.avatarImg 
+                                    ? `<img src="${state.currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px; object-fit: cover;">`
+                                    : `<div style="font-size: 60px;">${state.currentUser.avatar || '👤'}</div>`
+                                }
+                                <h3 style="margin-top: 10px;">${state.currentUser.nome}</h3>
+                            </div>
+                            
+                            <button class="login-btn" id="btnAlterarSenha">🔐 Alterar Senha</button>
+                            <button class="login-btn btn-secundario" id="btnFotoPerfil" style="margin-top: 10px; background: #6c757d;">🖼️ Mudar Foto</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('btnAlterarSenha').onclick = () => {
+                fecharModal();
+                modalAlterarSenha();
+            };
+            
+            document.getElementById('btnFotoPerfil').onclick = () => {
+                fecharModal();
+                modalFotoPerfil();
+            };
+        }
+
+        // ==================== AUTENTICAÇÃO ====================
+        function fazerLogin(perfil, senha, keepLoggedIn) {
+            const usuario = USUARIOS[perfil];
+            if (usuario && usuario.senha === senha) {
+                state.currentUser = { ...usuario };
+                state.keepLoggedIn = keepLoggedIn;
+                
+                if (keepLoggedIn) {
+                    localStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+                    }));
+                } else {
+                    sessionStorage.setItem('familia_session', JSON.stringify({
+                        userId: usuario.id,
+                        expires: Date.now() + 24 * 60 * 60 * 1000
+                    }));
+                }
+                renderizarApp();
+                return true;
+            }
+            return false;
+        }
+
+        function logout() {
+            state.currentUser = null;
+            localStorage.removeItem('familia_session');
+            sessionStorage.removeItem('familia_session');
+            renderizarApp();
+        }
+
+        function checkAutoLogin() {
+            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
+            if (saved) {
+                try {
+                    const session = JSON.parse(saved);
+                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
+                        state.currentUser = { ...USUARIOS[session.userId] };
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            return false;
+        }
+
+        // ==================== MODAIS ====================
         function renderizarModalCriacao() {
             let tipoSelecionado = 'foto';
             let efeitoSelecionado = 'normal';
@@ -1005,6 +1225,7 @@
                         </div>
                         
                         <div class="post-media ${EFETOS[post.efeito]?.classe || ''}">
+                            ${post.isLive && post.tipo === 'video' ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
                             ${post.tipo === 'foto' 
                                 ? `<img src="${post.url}" alt="Foto" loading="lazy">`
                                 : `<video src="${post.url}" controls preload="metadata"></video>`
@@ -1028,6 +1249,16 @@
                                     <strong>${com.usuarioNome}:</strong> ${com.texto}
                                 </div>
                             `).join('')}
+                            ${post.liveMessages && post.liveMessages.length > 0 ? `
+                                <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
+                                    <div style="font-size: 11px; color: #999; margin-bottom: 5px;">📹 Comentários da Live:</div>
+                                    ${post.liveMessages.slice(-2).map(msg => `
+                                        <div class="comentario" style="font-size: 11px;">
+                                            <strong>${msg.usuario}:</strong> ${msg.texto}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
                         </div>
                         
                         <div class="add-comentario">
@@ -1054,9 +1285,9 @@
             return `
                 <div class="live-container">
                     <div class="live-video">
-                        <div style="text-align: center; color: white;">
-                            <div style="font-size: 60px; margin-bottom: 10px;">${state.currentUser.avatar || '👤'}</div>
-                            <div>${state.currentUser.nome} está ao vivo!</div>
+                        <video id="liveVideoElement" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        <div class="camera-control">
+                            <button onclick="window.trocarCameraHandler()" style="background: rgba(0,0,0,0.6); border: none; border-radius: 50%; padding: 10px; font-size: 24px; cursor: pointer;">🔄</button>
                         </div>
                     </div>
                     
@@ -1067,6 +1298,7 @@
                     
                     <div class="live-actions">
                         <button onclick="window.curtirLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">❤️</button>
+                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border: none; border-radius: 25px; padding: 8px 12px; color: white; cursor: pointer; font-size: 12px;">💾 Salvar Live</button>
                         <button onclick="window.encerrarLiveHandler()" style="background: none; border: none; font-size: 35px; cursor: pointer;">🔴</button>
                     </div>
                     
@@ -1150,7 +1382,7 @@
                             <span class="online-badge"></span>
                         </div>
                         <div class="header-actions">
-                            <button class="icon-btn" onclick="window.modalFotoPerfil()">🖼️</button>
+                            <button class="icon-btn" onclick="window.modalPerfil()">⚙️</button>
                             <button class="icon-btn" onclick="window.logout()">🚪</button>
                         </div>
                     </div>
@@ -1203,10 +1435,14 @@
         };
         window.fecharModal = fecharModal;
         window.logout = logout;
+        window.modalPerfil = modalPerfil;
+        window.modalAlterarSenha = modalAlterarSenha;
         window.modalFotoPerfil = modalFotoPerfil;
         window.iniciarLiveHandler = iniciarLive;
         window.encerrarLiveHandler = encerrarLive;
         window.curtirLiveHandler = curtirLive;
+        window.trocarCameraHandler = trocarCamera;
+        window.salvarLiveHandler = salvarLiveNoFeed;
         window.enviarMensagemLiveHandler = () => {
             const input = document.getElementById('liveInput');
             if (input && input.value) {
