@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Família Connect - LPX</title>
+    <title>Família Connect - LPX Definitivo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
@@ -73,11 +73,12 @@
         .camera-main video { width: 100%; height: 100%; object-fit: cover; }
         .camera-pip { position: absolute; bottom: 20px; right: 20px; width: 120px; height: 160px; border-radius: 15px; overflow: hidden; border: 2px solid white; background: #000; cursor: move; }
         .camera-pip video { width: 100%; height: 100%; object-fit: cover; }
-        .camera-controls { padding: 20px; display: flex; gap: 15px; justify-content: center; background: #1a1a1a; }
+        .camera-controls { padding: 20px; display: flex; gap: 15px; justify-content: center; background: #1a1a1a; flex-wrap: wrap; }
         .camera-btn { width: 70px; height: 70px; border-radius: 50%; border: none; font-size: 30px; cursor: pointer; }
         .camera-btn.capture { background: #ff0066; color: white; }
         .camera-btn.record { background: #dc3545; color: white; }
         .camera-btn.recording { background: #ffc107; color: #333; animation: pulse 1s infinite; }
+        .camera-btn.swap { background: #17a2b8; color: white; font-size: 24px; }
         .camera-btn.close { background: #6c757d; color: white; }
         .timer { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 20px; font-family: monospace; font-size: 16px; }
         
@@ -93,29 +94,100 @@
 
 <script>
     // ============================================================
-    // BANCO DE DADOS - SEM IMAGENS FICTÍCIAS
+    // BANCO DE DADOS - IndexedDB (Salvamento PERMANENTE)
     // ============================================================
     
     let USUARIO_ATUAL = null;
     let POSTS = [];
     let AVATARES = {};
     let ABA_ATUAL = 'feed';
+    let db = null;
     
-    const CHAVE_POSTS = 'familia_connect_posts_v2';
-    const CHAVE_SESSAO = 'familia_connect_sessao_v2';
-    const CHAVE_AVATARES = 'familia_connect_avatares_v2';
-    
-    function carregarAvatares() {
-        const salvos = localStorage.getItem(CHAVE_AVATARES);
-        if (salvos) {
-            try {
-                AVATARES = JSON.parse(salvos);
-            } catch(e) {}
-        }
+    // Abrir IndexedDB
+    function abrirDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('FamiliaConnectDB', 2);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                db = request.result;
+                resolve(db);
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('posts')) {
+                    const store = db.createObjectStore('posts', { keyPath: 'id' });
+                    store.createIndex('data', 'data');
+                }
+                if (!db.objectStoreNames.contains('avatares')) {
+                    db.createObjectStore('avatares', { keyPath: 'usuarioId' });
+                }
+            };
+        });
     }
     
-    function salvarAvatares() {
-        localStorage.setItem(CHAVE_AVATARES, JSON.stringify(AVATARES));
+    async function carregarPostsDB() {
+        if (!db) await abrirDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['posts'], 'readonly');
+            const store = transaction.objectStore('posts');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                POSTS = request.result || [];
+                POSTS.sort((a, b) => b.id - a.id);
+                console.log('Posts carregados do IndexedDB:', POSTS.length);
+                resolve();
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+    
+    async function salvarPostsDB() {
+        if (!db) await abrirDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['posts'], 'readwrite');
+            const store = transaction.objectStore('posts');
+            
+            // Limpar e salvar todos
+            store.clear();
+            POSTS.forEach(post => store.add(post));
+            
+            transaction.oncomplete = () => {
+                console.log('Posts salvos no IndexedDB:', POSTS.length);
+                resolve();
+            };
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+    
+    async function carregarAvataresDB() {
+        if (!db) await abrirDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['avatares'], 'readonly');
+            const store = transaction.objectStore('avatares');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const avatares = request.result || [];
+                AVATARES = {};
+                avatares.forEach(a => { AVATARES[a.usuarioId] = a.avatar; });
+                resolve();
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+    
+    async function salvarAvatarDB(usuarioId, avatar) {
+        if (!db) await abrirDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['avatares'], 'readwrite');
+            const store = transaction.objectStore('avatares');
+            store.put({ usuarioId: usuarioId, avatar: avatar });
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
     }
     
     function getAvatar(usuarioId) {
@@ -125,26 +197,9 @@
         return usuarioId === 'pai' ? '👨' : '👩';
     }
     
-    function carregarPosts() {
-        const salvos = localStorage.getItem(CHAVE_POSTS);
-        if (salvos) {
-            try {
-                POSTS = JSON.parse(salvos);
-                console.log('Posts carregados:', POSTS.length);
-            } catch(e) {
-                POSTS = [];
-            }
-        } else {
-            // NADA de posts fictícios - começa vazio
-            POSTS = [];
-            console.log('Nenhum post salvo. Começando vazio.');
-        }
-    }
-    
-    function salvarPosts() {
-        localStorage.setItem(CHAVE_POSTS, JSON.stringify(POSTS));
-        console.log('Posts salvos:', POSTS.length);
-    }
+    // ============================================================
+    // SESSÃO
+    // ============================================================
     
     function salvarSessao(usuario, manter) {
         const sessao = {
@@ -152,11 +207,11 @@
             usuarioNome: usuario.nome,
             expira: manter ? Date.now() + (30 * 24 * 60 * 60 * 1000) : Date.now() + (24 * 60 * 60 * 1000)
         };
-        localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+        localStorage.setItem('familia_sessao_v3', JSON.stringify(sessao));
     }
     
     function carregarSessao() {
-        const salva = localStorage.getItem(CHAVE_SESSAO);
+        const salva = localStorage.getItem('familia_sessao_v3');
         if (salva) {
             try {
                 const sessao = JSON.parse(salva);
@@ -174,14 +229,14 @@
     }
     
     function limparSessao() {
-        localStorage.removeItem(CHAVE_SESSAO);
+        localStorage.removeItem('familia_sessao_v3');
     }
     
     // ============================================================
     // POSTAGEM
     // ============================================================
     
-    function adicionarPost(tipo, midia, legenda) {
+    async function adicionarPost(tipo, midia, legenda) {
         const novoPost = {
             id: Date.now(),
             usuarioId: USUARIO_ATUAL.id,
@@ -194,12 +249,12 @@
             comentarios: []
         };
         POSTS.unshift(novoPost);
-        salvarPosts();
+        await salvarPostsDB();
         renderizarConteudo();
         return true;
     }
     
-    function curtirPost(id) {
+    async function curtirPost(id) {
         const post = POSTS.find(p => p.id === id);
         if (post) {
             const index = post.curtidas.indexOf(USUARIO_ATUAL.id);
@@ -208,12 +263,12 @@
             } else {
                 post.curtidas.splice(index, 1);
             }
-            salvarPosts();
+            await salvarPostsDB();
             renderizarConteudo();
         }
     }
     
-    function comentarPost(id) {
+    async function comentarPost(id) {
         const input = document.getElementById(`comentario_${id}`);
         if (!input) return;
         const texto = input.value.trim();
@@ -227,50 +282,80 @@
                 texto: texto,
                 data: new Date().toISOString()
             });
-            salvarPosts();
+            await salvarPostsDB();
             input.value = '';
             renderizarConteudo();
         }
     }
     
-    function excluirPost(id) {
+    async function excluirPost(id) {
         const post = POSTS.find(p => p.id === id);
         if (post && post.usuarioId === USUARIO_ATUAL.id) {
             if (confirm('Excluir este post?')) {
                 POSTS = POSTS.filter(p => p.id !== id);
-                salvarPosts();
+                await salvarPostsDB();
                 renderizarConteudo();
             }
         }
     }
     
     // ============================================================
-    // CÂMERA DUPLA REAL (Frontal + Traseira)
+    // CÂMERA DUPLA (Frontal + Traseira com troca)
     // ============================================================
     
-    let frontStream = null;
-    let backStream = null;
+    let mainStream = null;
+    let pipStream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
     let isRecording = false;
     let recordingSeconds = 0;
     let recordingTimer = null;
     let animationFrame = null;
+    let mainIsFront = true;  // true = frontal, false = traseira
+    let pipIsFront = false;   // true = frontal, false = traseira
     
     async function iniciarCameraDupla() {
         try {
-            // Câmera FRONTAL (selfie/LPX)
-            const frontConstraints = { video: { facingMode: 'user' }, audio: true };
-            frontStream = await navigator.mediaDevices.getUserMedia(frontConstraints);
+            // Main: frontal, Pip: traseira
+            mainIsFront = true;
+            pipIsFront = false;
             
-            // Câmera TRASEIRA
-            const backConstraints = { video: { facingMode: 'environment' }, audio: false };
-            backStream = await navigator.mediaDevices.getUserMedia(backConstraints);
+            const mainConstraints = { video: { facingMode: 'user' }, audio: true };
+            const pipConstraints = { video: { facingMode: 'environment' }, audio: false };
+            
+            mainStream = await navigator.mediaDevices.getUserMedia(mainConstraints);
+            pipStream = await navigator.mediaDevices.getUserMedia(pipConstraints);
             
             abrirInterfaceCamera();
         } catch(err) {
             alert('Erro ao acessar câmeras: ' + err.message);
-            console.error(err);
+        }
+    }
+    
+    async function trocarCameras() {
+        // Trocar as configurações
+        mainIsFront = !mainIsFront;
+        pipIsFront = !pipIsFront;
+        
+        // Parar streams atuais
+        if (mainStream) mainStream.getTracks().forEach(t => t.stop());
+        if (pipStream) pipStream.getTracks().forEach(t => t.stop());
+        
+        try {
+            const mainConstraints = { video: { facingMode: mainIsFront ? 'user' : 'environment' }, audio: true };
+            const pipConstraints = { video: { facingMode: pipIsFront ? 'user' : 'environment' }, audio: false };
+            
+            mainStream = await navigator.mediaDevices.getUserMedia(mainConstraints);
+            pipStream = await navigator.mediaDevices.getUserMedia(pipConstraints);
+            
+            const mainVideo = document.getElementById('mainVideo');
+            const pipVideo = document.getElementById('pipVideo');
+            
+            if (mainVideo) mainVideo.srcObject = mainStream;
+            if (pipVideo) pipVideo.srcObject = pipStream;
+            
+        } catch(err) {
+            alert('Erro ao trocar câmeras: ' + err.message);
         }
     }
     
@@ -287,6 +372,7 @@
                 <div class="camera-controls">
                     <button class="camera-btn capture" id="btnFoto">📸</button>
                     <button class="camera-btn record" id="btnVideo">🎥</button>
+                    <button class="camera-btn swap" id="btnSwap">🔄</button>
                     <button class="camera-btn close" id="btnFechar">✕</button>
                 </div>
             </div>
@@ -297,8 +383,8 @@
         const mainVideo = document.getElementById('mainVideo');
         const pipVideo = document.getElementById('pipVideo');
         
-        mainVideo.srcObject = frontStream;
-        pipVideo.srcObject = backStream;
+        mainVideo.srcObject = mainStream;
+        pipVideo.srcObject = pipStream;
         
         document.getElementById('btnFoto').onclick = () => {
             tirarFotoDupla();
@@ -310,6 +396,10 @@
             } else {
                 iniciarGravacaoDupla();
             }
+        };
+        
+        document.getElementById('btnSwap').onclick = () => {
+            trocarCameras();
         };
         
         document.getElementById('btnFechar').onclick = () => {
@@ -362,10 +452,10 @@
         canvas.width = mainVideo.videoWidth;
         canvas.height = mainVideo.videoHeight;
         
-        // Desenhar vídeo principal (LPX)
+        // Desenhar vídeo principal
         ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
         
-        // Desenhar PiP (ambiente)
+        // Desenhar PiP
         const pipWidth = canvas.width * 0.25;
         const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
         const pipX = canvas.width - pipWidth - 20;
@@ -377,13 +467,13 @@
         ctx.lineWidth = 3;
         ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
         
-        // Texto "LPX" no lugar de selfie
+        // Texto LPX
         ctx.fillStyle = 'white';
         ctx.font = 'bold 16px Arial';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
         ctx.fillText('🎥 LPX', 15, 40);
-        ctx.fillText('📷 Ambiente', pipX + 10, pipY + 25);
+        ctx.fillText('📷 Camera 2', pipX + 10, pipY + 25);
         ctx.shadowBlur = 0;
         
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -423,7 +513,7 @@
             ctx.shadowColor = 'black';
             ctx.shadowBlur = 3;
             ctx.fillText('🎥 LPX', 10, 30);
-            ctx.fillText('📷 Ambiente', pipX + 10, pipY + 20);
+            ctx.fillText('📷 Camera 2', pipX + 10, pipY + 20);
             ctx.shadowBlur = 0;
             
             animationFrame = requestAnimationFrame(desenharFrame);
@@ -486,8 +576,8 @@
             if (animationFrame) cancelAnimationFrame(animationFrame);
         }
         
-        if (frontStream) frontStream.getTracks().forEach(t => t.stop());
-        if (backStream) backStream.getTracks().forEach(t => t.stop());
+        if (mainStream) mainStream.getTracks().forEach(t => t.stop());
+        if (pipStream) pipStream.getTracks().forEach(t => t.stop());
         
         document.getElementById('cameraContainer')?.remove();
     }
@@ -508,8 +598,8 @@
             const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
             const reader = new FileReader();
             
-            reader.onload = (event) => {
-                adicionarPost(tipo, event.target.result, legenda);
+            reader.onload = async (event) => {
+                await adicionarPost(tipo, event.target.result, legenda);
                 alert('✅ Publicado no Feed!');
             };
             reader.readAsDataURL(file);
@@ -523,7 +613,7 @@
                 <div class="modal-content">
                     <h3 style="margin-bottom: 20px;">📤 Nova Publicação</h3>
                     <button class="option-btn primary" onclick="iniciarCameraDupla(); fecharModal()">
-                        🎥 Câmera Dupla (LPX + Ambiente)
+                        🎥 Câmera Dupla (LPX + Camera 2)
                     </button>
                     <button class="option-btn secondary" onclick="importarGaleria(); fecharModal()">
                         📁 Importar da Galeria
@@ -541,18 +631,18 @@
     // AVATAR
     // ============================================================
     
-    function abrirModalAvatar() {
+    async function abrirModalAvatar() {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.onchange = (e) => {
+        input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 AVATARES[USUARIO_ATUAL.id] = event.target.result;
-                salvarAvatares();
+                await salvarAvatarDB(USUARIO_ATUAL.id, event.target.result);
                 alert('✅ Foto de perfil atualizada!');
                 renderizarConteudo();
             };
@@ -663,11 +753,6 @@
                             : `<video src="${post.midia}" controls></video>`}
                     </div>
                     ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
-                    <div class="post-acoes">
-                        <button class="acao ${post.curtidas.includes(USUARIO_ATUAL.id) ? 'liked' : ''}" onclick="curtirPost(${post.id})">
-                            ❤️ ${post.curtidas.length}
-                        </button>
-                    </div>
                     <div class="add-comentario">
                         <input type="text" id="comentario_perfil_${post.id}" placeholder="Comentário...">
                         <button onclick="comentarPost(${post.id})">Enviar</button>
@@ -737,7 +822,7 @@
         document.querySelector(`[data-perfil="${perfil}"]`)?.classList.add('selected');
     }
     
-    function renderizarApp() {
+    async function renderizarApp() {
         const appDiv = document.getElementById('app');
         if (!appDiv) return;
         
@@ -809,21 +894,24 @@
     window.mudarAba = mudarAba;
     window.abrirModalAvatar = abrirModalAvatar;
     window.fecharModal = fecharModal;
+    window.trocarCameras = trocarCameras;
     
     // ============================================================
     // INICIAR
     // ============================================================
     
-    carregarAvatares();
-    carregarPosts();
-    carregarSessao();
-    renderizarApp();
+    async function iniciar() {
+        await abrirDB();
+        await carregarAvataresDB();
+        await carregarPostsDB();
+        carregarSessao();
+        renderizarApp();
+        console.log('🚀 App iniciado com IndexedDB!');
+        console.log('📱 Posts salvos permanentemente');
+        console.log('🔄 Botão para trocar câmeras disponível');
+    }
     
-    console.log('🚀 App iniciado!');
-    console.log('📱 Câmera frontal + traseira REAL');
-    console.log('💾 Posts salvos permanentemente');
-    console.log('🎥 Texto "LPX" no lugar de selfie');
-    console.log('❌ Sem imagens fictícias');
+    iniciar();
 </script>
 </body>
 </html>
