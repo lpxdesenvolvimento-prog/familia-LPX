@@ -8,7 +8,1663 @@
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Família Connect - App Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        /* Chuva de emojis */
+        .emoji-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 30px;
+            animation: floatUp 2.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0.5) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(50vh) scale(1.2) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-20vh) scale(0.8) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Tela de Login */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(255,255,255,0.95);
+            border-radius: 40px;
+            padding: 35px 25px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .perfil-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .perfil-card {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .perfil-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f0ff 0%, #fff 100%);
+        }
+
+        .perfil-avatar {
+            font-size: 45px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .perfil-nome {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .input-senha {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .login-btn:active { transform: scale(0.98); }
+
+        /* Header do Feed */
+        .feed-header {
+            background: white;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-area h2 {
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .online-badge {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Menu inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 20px;
+            border-top: 1px solid #eee;
+            z-index: 100;
+        }
+
+        .nav-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+            transform: translateY(-3px);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .main-content {
+            padding-bottom: 70px;
+            padding-top: 10px;
+        }
+
+        /* Posts */
+        .post {
+            background: white;
+            margin-bottom: 12px;
+            border-radius: 0;
+        }
+
+        .post-header {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            background: #f0f0f0;
+        }
+
+        .post-avatar-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .post-info {
+            flex: 1;
+        }
+
+        .post-nome {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .post-data {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .post-media {
+            width: 100%;
+            background: #f5f5f5;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .post-media img, .post-media video {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+        }
+
+        .live-badge-post {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 5;
+        }
+
+        .post-legenda {
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .post-actions {
+            padding: 8px 15px;
+            display: flex;
+            gap: 25px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            padding: 6px 0;
+        }
+
+        .action-btn.liked {
+            color: #dc3545;
+        }
+
+        .comentarios-area {
+            padding: 10px 15px;
+            background: #fafafa;
+        }
+
+        .comentario {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .comentario strong {
+            color: #667eea;
+        }
+
+        .add-comentario {
+            padding: 10px 15px;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .add-comentario input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #eee;
+            border-radius: 25px;
+            font-size: 13px;
+            background: #f5f5f5;
+        }
+
+        .add-comentario button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px 18px;
+            cursor: pointer;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 18px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .avatar-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .avatar-option {
+            width: 70px;
+            height: 70px;
+            border-radius: 35px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+
+        .avatar-option.selected {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-avatar {
+            border: 2px dashed #ddd;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin: 15px 0;
+            background: #f9f9f9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+
+        /* Live */
+        .live-container {
+            background: #000;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .live-video {
+            width: 100%;
+            height: 60vh;
+            background: #111;
+            position: relative;
+        }
+
+        .live-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            padding: 12px;
+            z-index: 20;
+        }
+
+        .camera-control button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .live-info {
+            position: absolute;
+            top: 20px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .live-badge {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .live-actions {
+            position: absolute;
+            right: 15px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .live-actions button {
+            background: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            padding: 12px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .live-chat {
+            background: rgba(0,0,0,0.7);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .live-message {
+            color: white;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .live-message strong {
+            color: #ff69b4;
+        }
+
+        .live-input-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            padding: 10px;
+            background: rgba(0,0,0,0.8);
+            gap: 10px;
+        }
+
+        .live-input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background: #333;
+            color: white;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 55px;
+            height: 55px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 200;
+            border: none;
+            font-size: 28px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .camera-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .camera-btn {
+            flex: 1;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .camera-btn:active { transform: scale(0.98); }
+
+        .camera-preview {
+            width: 100%;
+            background: #000;
+            border-radius: 15px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .camera-preview video, .camera-preview img {
+            width: 100%;
+            border-radius: 15px;
+            max-height: 300px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app"></div>
+
+    <script>
+        // ==================== USUÁRIOS ====================
+        const USUARIOS = {
+            pai: { id: 'pai', nome: 'Papai 👨', senha: 'pai123', avatar: '👨', avatarImg: null, status: 'online' },
+            mae: { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123', avatar: '👩', avatarImg: null, status: 'online' }
+        };
+
+        let currentUser = null;
+        let posts = [];
+        let activeTab = 'feed';
+        
+        // Live state
+        let liveActive = false;
+        let liveMessages = [];
+        let liveLikes = 0;
+        let liveStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        
+        // Camera state
+        let cameraStream = null;
+        let isRecording = false;
+
+        const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
+
+        function criarChuvaEmojis() {
+            const container = document.createElement('div');
+            container.className = 'emoji-container';
+            document.body.appendChild(container);
+            
+            for(let i = 0; i < 25; i++) {
+                setTimeout(() => {
+                    const emoji = EMOJIS_RAIN[Math.floor(Math.random() * EMOJIS_RAIN.length)];
+                    const emojiDiv = document.createElement('div');
+                    emojiDiv.className = 'floating-emoji';
+                    emojiDiv.textContent = emoji;
+                    emojiDiv.style.left = Math.random() * 100 + '%';
+                    emojiDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
+                    emojiDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                    container.appendChild(emojiDiv);
+                    
+                    setTimeout(() => {
+                        emojiDiv.remove();
+                        if (container.children.length === 0) container.remove();
+                    }, 2500);
+                }, i * 60);
+            }
+        }
+
+        // ==================== ARMAZENAMENTO PERMANENTE ====================
+        function loadData() {
+            // Carregar posts
+            const savedPosts = localStorage.getItem('familia_connect_posts');
+            if (savedPosts) {
+                try {
+                    posts = JSON.parse(savedPosts);
+                    console.log('Posts carregados:', posts.length);
+                } catch(e) {
+                    posts = [];
+                }
+            }
+            
+            if (!posts || posts.length === 0) {
+                posts = [
+                    {
+                        id: '1',
+                        usuarioId: 'mae',
+                        usuarioNome: 'Mamãe 👩',
+                        tipo: 'foto',
+                        dataUrl: 'https://picsum.photos/id/20/400/400',
+                        legenda: 'Dia especial em família! 💕',
+                        data: new Date(Date.now() - 86400000).toISOString(),
+                        curtidas: ['pai'],
+                        comentarios: [{ usuarioId: 'pai', usuarioNome: 'Papai 👨', texto: 'Que lindo! 🥰' }]
+                    },
+                    {
+                        id: '2',
+                        usuarioId: 'pai',
+                        usuarioNome: 'Papai 👨',
+                        tipo: 'foto',
+                        dataUrl: 'https://picsum.photos/id/100/400/400',
+                        legenda: 'Almoço em família 🍝',
+                        data: new Date(Date.now() - 172800000).toISOString(),
+                        curtidas: ['mae'],
+                        comentarios: [{ usuarioId: 'mae', usuarioNome: 'Mamãe 👩', texto: 'Amei! 😍' }]
+                    }
+                ];
+                saveData();
+            }
+            
+            // Carregar avatares
+            const savedAvatars = localStorage.getItem('familia_connect_avatars');
+            if (savedAvatars) {
+                try {
+                    const avatars = JSON.parse(savedAvatars);
+                    if (avatars.pai) USUARIOS.pai.avatarImg = avatars.pai;
+                    if (avatars.mae) USUARIOS.mae.avatarImg = avatars.mae;
+                } catch(e) {}
+            }
+            
+            // Carregar senhas personalizadas
+            const savedPasswords = localStorage.getItem('familia_connect_passwords');
+            if (savedPasswords) {
+                try {
+                    const passwords = JSON.parse(savedPasswords);
+                    if (passwords.pai) USUARIOS.pai.senha = passwords.pai;
+                    if (passwords.mae) USUARIOS.mae.senha = passwords.mae;
+                } catch(e) {}
+            }
+            
+            // Carregar sessão
+            const savedSession = localStorage.getItem('familia_connect_session');
+            if (savedSession) {
+                try {
+                    const session = JSON.parse(savedSession);
+                    if (session.userId && session.expires > Date.now()) {
+                        currentUser = { ...USUARIOS[session.userId] };
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('familia_connect_posts', JSON.stringify(posts));
+            console.log('Dados salvos! Total de posts:', posts.length);
+        }
+
+        function saveSession(userId, keepLogged) {
+            if (keepLogged) {
+                localStorage.setItem('familia_connect_session', JSON.stringify({
+                    userId: userId,
+                    expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+                }));
+            } else {
+                sessionStorage.setItem('familia_connect_session', JSON.stringify({
+                    userId: userId,
+                    expires: Date.now() + 24 * 60 * 60 * 1000
+                }));
+            }
+        }
+
+        function clearSession() {
+            localStorage.removeItem('familia_connect_session');
+            sessionStorage.removeItem('familia_connect_session');
+        }
+
+        function saveAvatar(usuarioId, avatarData) {
+            const avatars = JSON.parse(localStorage.getItem('familia_connect_avatars') || '{}');
+            avatars[usuarioId] = avatarData;
+            localStorage.setItem('familia_connect_avatars', JSON.stringify(avatars));
+        }
+
+        function savePassword(usuarioId, novaSenha) {
+            const passwords = JSON.parse(localStorage.getItem('familia_connect_passwords') || '{}');
+            passwords[usuarioId] = novaSenha;
+            localStorage.setItem('familia_connect_passwords', JSON.stringify(passwords));
+            USUARIOS[usuarioId].senha = novaSenha;
+        }
+
+        // ==================== FUNÇÕES DO FEED ====================
+        
+        function adicionarPost(tipo, dataUrl, legenda, isLiveRecording = false, liveInfo = null) {
+            const novoPost = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
+                usuarioId: currentUser.id,
+                usuarioNome: currentUser.nome,
+                tipo: tipo,
+                dataUrl: dataUrl,
+                legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: []
+            };
+            
+            if (isLiveRecording && liveInfo) {
+                novoPost.isLiveRecording = true;
+                novoPost.liveMessages = liveInfo.messages;
+                novoPost.liveLikes = liveInfo.likes;
+            }
+            
+            posts.unshift(novoPost);
+            saveData();
+            renderizarApp();
+            return true;
+        }
+
+        // FUNÇÃO CORRIGIDA PARA PUBLICAR DA GALERIA
+        function publicarArquivo(file, legenda) {
+            if (!file) {
+                alert('Selecione um arquivo');
+                return;
+            }
+            
+            // Verificar tamanho (máximo 50MB)
+            if (file.size > 50 * 1024 * 1024) {
+                alert('Arquivo muito grande! Máximo 50MB.');
+                return;
+            }
+            
+            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
+            
+            if (tipo === 'foto' && !file.type.startsWith('image/')) {
+                alert('Formato de imagem não suportado');
+                return;
+            }
+            
+            if (tipo === 'video' && !file.type.startsWith('video/')) {
+                alert('Formato de vídeo não suportado');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    adicionarPost(tipo, e.target.result, legenda);
+                    alert('✅ Publicado com sucesso!');
+                    fecharModal();
+                } catch(err) {
+                    alert('❌ Erro ao publicar: ' + err.message);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('❌ Erro ao ler o arquivo. Tente novamente.');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // TIRAR FOTO COM A CÂMERA
+        async function tirarFoto() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' }
+                });
+                
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                stream.getTracks().forEach(track => track.stop());
+                
+                abrirModalLegenda(dataUrl, 'foto');
+                
+            } catch(err) {
+                alert('Erro ao acessar câmera: ' + err.message);
+            }
+        }
+
+        function importarGaleria() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,video/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    abrirModalArquivo(file);
+                } else {
+                    alert('Selecione um arquivo');
+                }
+            };
+            input.click();
+        }
+
+        function abrirModalArquivo(file) {
+            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
+            const previewUrl = URL.createObjectURL(file);
+            
+            const modalHtml = `
+                <div class="modal" id="arquivoModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>${tipo === 'foto' ? '📸 Adicionar Foto' : '🎥 Adicionar Vídeo'}</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                ${tipo === 'foto' 
+                                    ? `<img src="${previewUrl}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`
+                                    : `<video src="${previewUrl}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`
+                                }
+                            </div>
+                            <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('confirmarPublicar').onclick = () => {
+                const legenda = document.getElementById('legendaInput').value;
+                publicarArquivo(file, legenda);
+                URL.revokeObjectURL(previewUrl);
+            };
+        }
+
+        function abrirModalLegenda(dataUrl, tipo) {
+            const modalHtml = `
+                <div class="modal" id="legendaModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>${tipo === 'foto' ? '📸 Adicionar Foto' : '🎥 Adicionar Vídeo'}</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                ${tipo === 'foto' 
+                                    ? `<img src="${dataUrl}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`
+                                    : `<video src="${dataUrl}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`
+                                }
+                            </div>
+                            <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('confirmarPublicar').onclick = () => {
+                const legenda = document.getElementById('legendaInput').value;
+                adicionarPost(tipo, dataUrl, legenda);
+                alert('✅ Publicado com sucesso!');
+                fecharModal();
+            };
+        }
+
+        function curtirPost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                const idx = post.curtidas.indexOf(currentUser.id);
+                if (idx === -1) {
+                    post.curtidas.push(currentUser.id);
+                    criarChuvaEmojis();
+                } else {
+                    post.curtidas.splice(idx, 1);
+                }
+                saveData();
+                renderizarFeed();
+            }
+        }
+
+        function adicionarComentario(postId, texto) {
+            if (!texto.trim()) return;
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.comentarios.push({
+                    usuarioId: currentUser.id,
+                    usuarioNome: currentUser.nome,
+                    texto: texto.trim(),
+                    data: new Date().toISOString()
+                });
+                saveData();
+                renderizarFeed();
+            }
+        }
+
+        function excluirPost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (post && post.usuarioId === currentUser.id) {
+                if (confirm('Excluir este post?')) {
+                    posts = posts.filter(p => p.id !== postId);
+                    saveData();
+                    renderizarFeed();
+                }
+            }
+        }
+
+        // ==================== LIVE ====================
+        async function iniciarLive() {
+            liveActive = true;
+            liveMessages = [];
+            liveLikes = 0;
+            recordedChunks = [];
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' },
+                    audio: true
+                });
+                
+                const videoElement = document.getElementById('liveVideoElement');
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                }
+                
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                mediaRecorder.start(2000);
+                liveStream = stream;
+                
+            } catch (err) {
+                alert('Erro ao acessar câmera: ' + err.message);
+                liveActive = false;
+            }
+            
+            renderizarApp();
+            setTimeout(() => {
+                adicionarMensagemLive('🎥 Live iniciada!', 'Sistema');
+            }, 500);
+        }
+
+        function encerrarLive() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+            if (liveStream) {
+                liveStream.getTracks().forEach(track => track.stop());
+                liveStream = null;
+            }
+            liveActive = false;
+            renderizarApp();
+        }
+
+        function adicionarMensagemLive(texto, usuario = null) {
+            liveMessages.push({
+                usuario: usuario || currentUser.nome,
+                texto: texto,
+                hora: new Date().toLocaleTimeString()
+            });
+            renderizarLiveContent();
+        }
+
+        function curtirLive() {
+            liveLikes++;
+            criarChuvaEmojis();
+            renderizarLiveContent();
+        }
+
+        function salvarLiveNoFeed() {
+            if (recordedChunks.length === 0) {
+                alert('Aguardando gravação. Aguarde alguns segundos e tente novamente.');
+                return;
+            }
+            
+            const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const liveInfo = {
+                    messages: [...liveMessages],
+                    likes: liveLikes
+                };
+                adicionarPost('video', e.target.result, '', true, liveInfo);
+                alert('✅ Live salva no feed!');
+                encerrarLive();
+                activeTab = 'feed';
+                renderizarApp();
+            };
+            reader.readAsDataURL(videoBlob);
+        }
+
+        // ==================== PERFIL / SENHA ====================
+        function modalAlterarSenha() {
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>🔐 Alterar Senha</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="password" id="senhaAtual" class="modal-input" placeholder="Senha atual">
+                            <input type="password" id="novaSenha" class="modal-input" placeholder="Nova senha (mínimo 4 caracteres)">
+                            <input type="password" id="confirmarSenha" class="modal-input" placeholder="Confirmar nova senha">
+                            <button class="login-btn" id="confirmarAlterarSenha">✅ Alterar Senha</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('confirmarAlterarSenha').onclick = () => {
+                const atual = document.getElementById('senhaAtual').value;
+                const nova = document.getElementById('novaSenha').value;
+                const confirmar = document.getElementById('confirmarSenha').value;
+                
+                if (atual !== currentUser.senha) {
+                    alert('❌ Senha atual incorreta!');
+                    return;
+                }
+                if (nova !== confirmar) {
+                    alert('❌ Nova senha e confirmação não coincidem!');
+                    return;
+                }
+                if (nova.length < 4) {
+                    alert('❌ A senha deve ter pelo menos 4 caracteres!');
+                    return;
+                }
+                
+                savePassword(currentUser.id, nova);
+                currentUser.senha = nova;
+                alert('✅ Senha alterada com sucesso!');
+                fecharModal();
+            };
+        }
+
+        function modalFotoPerfil() {
+            let emojiSelecionado = currentUser.avatar || (currentUser.id === 'pai' ? '👨' : '👩');
+            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕', '😍', '🎉', '✨', '🌟'];
+            
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>🖼️ Foto do Perfil</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                ${currentUser.avatarImg 
+                                    ? `<img src="${currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px; object-fit: cover;">`
+                                    : `<div style="font-size: 60px;">${currentUser.avatar || '👨'}</div>`
+                                }
+                            </div>
+                            
+                            <div class="avatar-options">
+                                ${emojis.map(e => `
+                                    <div class="avatar-option ${emojiSelecionado === e ? 'selected' : ''}" data-emoji="${e}">
+                                        ${e}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="upload-avatar" id="uploadAvatarArea">
+                                📁 Ou clique para selecionar uma foto da galeria
+                            </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+                            
+                            <button class="login-btn" id="salvarFotoPerfil">💾 Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.querySelectorAll('[data-emoji]').forEach(el => {
+                el.onclick = () => {
+                    document.querySelectorAll('[data-emoji]').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                    emojiSelecionado = el.dataset.emoji;
+                };
+            });
+            
+            const uploadArea = document.getElementById('uploadAvatarArea');
+            const fileInput = document.getElementById('avatarFileInput');
+            
+            uploadArea.onclick = () => fileInput.click();
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        USUARIOS[currentUser.id].avatarImg = ev.target.result;
+                        USUARIOS[currentUser.id].avatar = null;
+                        saveAvatar(currentUser.id, ev.target.result);
+                        currentUser.avatarImg = ev.target.result;
+                        currentUser.avatar = null;
+                        alert('✅ Foto atualizada!');
+                        fecharModal();
+                        renderizarApp();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            document.getElementById('salvarFotoPerfil').onclick = () => {
+                USUARIOS[currentUser.id].avatar = emojiSelecionado;
+                USUARIOS[currentUser.id].avatarImg = null;
+                saveAvatar(currentUser.id, null);
+                currentUser.avatar = emojiSelecionado;
+                currentUser.avatarImg = null;
+                alert('✅ Avatar atualizado!');
+                fecharModal();
+                renderizarApp();
+            };
+        }
+
+        function modalPerfil() {
+            const modalHtml = `
+                <div class="modal" id="configModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>⚙️ Configurações</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                ${currentUser.avatarImg 
+                                    ? `<img src="${currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px; object-fit: cover;">`
+                                    : `<div style="font-size: 60px;">${currentUser.avatar || (currentUser.id === 'pai' ? '👨' : '👩')}</div>`
+                                }
+                                <h3 style="margin-top: 10px;">${currentUser.nome}</h3>
+                            </div>
+                            
+                            <button class="login-btn" id="btnAlterarSenha">🔐 Alterar Senha</button>
+                            <button class="login-btn" id="btnFotoPerfil" style="margin-top: 10px; background: #6c757d;">🖼️ Mudar Foto</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('btnAlterarSenha').onclick = () => {
+                fecharModal();
+                modalAlterarSenha();
+            };
+            
+            document.getElementById('btnFotoPerfil').onclick = () => {
+                fecharModal();
+                modalFotoPerfil();
+            };
+        }
+
+        // ==================== MODAL DE CRIAÇÃO ====================
+        function renderizarModalCriacao() {
+            const modalHtml = `
+                <div class="modal" id="criarModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Nova publicação</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="camera-buttons">
+                                <button class="camera-btn" id="btnTirarFoto">📸 Tirar Foto</button>
+                            </div>
+                            
+                            <div class="upload-avatar" id="importarGaleriaBtn">
+                                📁 Importar da Galeria
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('btnTirarFoto').onclick = () => {
+                fecharModal();
+                tirarFoto();
+            };
+            
+            document.getElementById('importarGaleriaBtn').onclick = () => {
+                fecharModal();
+                importarGaleria();
+            };
+        }
+
+        function fecharModal() {
+            document.querySelectorAll('.modal').forEach(m => m.remove());
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function formatarData(dataISO) {
+            const data = new Date(dataISO);
+            const agora = new Date();
+            const diff = agora - data;
+            const minutos = Math.floor(diff / 60000);
+            const horas = Math.floor(diff / 3600000);
+            const dias = Math.floor(diff / 86400000);
+            if (minutos < 1) return 'Agora';
+            if (minutos < 60) return `${minutos} min`;
+            if (horas < 24) return `${horas} h`;
+            if (dias < 7) return `${dias} dias`;
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        function renderizarFeed() {
+            const container = document.getElementById('feedContainer');
+            if (!container) return;
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="loading">📭 Nenhum post ainda. Clique no + para adicionar!</div>';
+                return;
+            }
+            
+            container.innerHTML = posts.map(post => {
+                const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
+                
+                return `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                ${usuarioPost.avatarImg 
+                                    ? `<img src="${usuarioPost.avatarImg}" class="post-avatar-img">`
+                                    : `<div style="font-size: 25px;">${usuarioPost.avatar || (post.usuarioId === 'pai' ? '👨' : '👩')}</div>`
+                                }
+                            </div>
+                            <div class="post-info">
+                                <div class="post-nome">${post.usuarioNome}</div>
+                                <div class="post-data">${formatarData(post.data)}</div>
+                            </div>
+                            ${post.usuarioId === currentUser.id ? `
+                                <button class="icon-btn" onclick="window.excluirPostHandler('${post.id}')" style="font-size: 20px;">⋯</button>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="post-media">
+                            ${post.tipo === 'foto' 
+                                ? `<img src="${post.dataUrl}" alt="Foto" loading="lazy">`
+                                : `<video src="${post.dataUrl}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
+                            }
+                            ${post.isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
+                        </div>
+                        
+                        ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
+                        
+                        <div class="post-actions">
+                            <button class="action-btn ${post.curtidas.includes(currentUser.id) ? 'liked' : ''}" onclick="window.curtirHandler('${post.id}')">
+                                ❤️ ${post.curtidas.length}
+                            </button>
+                            <button class="action-btn" onclick="window.focarComentario('${post.id}')">
+                                💬 ${post.comentarios.length}
+                            </button>
+                        </div>
+                        
+                        <div class="comentarios-area" id="comentarios-${post.id}">
+                            ${post.comentarios.slice(-3).map(com => `
+                                <div class="comentario">
+                                    <strong>${com.usuarioNome}:</strong> ${com.texto}
+                                </div>
+                            `).join('')}
+                            ${post.liveMessages && post.liveMessages.length > 0 ? `
+                                <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
+                                    <div style="font-size: 11px; color: #999; margin-bottom: 5px;">📹 Comentários da Live:</div>
+                                    ${post.liveMessages.slice(-3).map(msg => `
+                                        <div class="comentario" style="font-size: 11px;">
+                                            <strong>${msg.usuario}:</strong> ${msg.texto}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="add-comentario">
+                            <input type="text" id="comentarioInput-${post.id}" placeholder="Adicione um comentário...">
+                            <button onclick="window.comentarHandler('${post.id}')">Enviar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderizarLiveContent() {
+            const liveChat = document.getElementById('liveChat');
+            const liveLikesSpan = document.getElementById('liveLikesSpan');
+            
+            if (liveChat) {
+                liveChat.innerHTML = liveMessages.map(msg => `
+                    <div class="live-message">
+                        <strong>${msg.usuario}:</strong> ${msg.texto}
+                    </div>
+                `).join('');
+                liveChat.scrollTop = liveChat.scrollHeight;
+            }
+            
+            if (liveLikesSpan) {
+                liveLikesSpan.textContent = liveLikes;
+            }
+        }
+
+        function renderizarLive() {
+            if (!liveActive) {
+                return `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 30px;">
+                        <div style="font-size: 80px; margin-bottom: 20px;">📹</div>
+                        <h3 style="margin-bottom: 10px;">Live da Família</h3>
+                        <p style="color: #666; text-align: center; margin-bottom: 30px;">Compartilhe momentos em tempo real</p>
+                        <button class="login-btn" onclick="window.iniciarLiveHandler()" style="width: auto; padding: 15px 30px;">🔴 Iniciar Live</button>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="live-container">
+                    <div class="live-video">
+                        <video id="liveVideoElement" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    </div>
+                    
+                    <div class="live-info">
+                        <div class="live-badge">🔴 AO VIVO</div>
+                        <div style="color: white;">❤️ <span id="liveLikesSpan">${liveLikes}</span></div>
+                    </div>
+                    
+                    <div class="live-actions">
+                        <button onclick="window.curtirLiveHandler()">❤️</button>
+                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border-radius: 25px; font-size: 16px;">💾 Salvar</button>
+                        <button onclick="window.encerrarLiveHandler()">🔴</button>
+                    </div>
+                    
+                    <div class="live-chat" id="liveChat">
+                        ${liveMessages.map(msg => `
+                            <div class="live-message">
+                                <strong>${msg.usuario}:</strong> ${msg.texto}
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="live-input-area">
+                        <input type="text" class="live-input" id="liveInput" placeholder="Digite uma mensagem...">
+                        <button onclick="window.enviarMensagemLiveHandler()">Enviar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderizarApp() {
+            const appDiv = document.getElementById('app');
+            
+            if (!currentUser) {
+                appDiv.innerHTML = `
+                    <div class="login-screen">
+                        <div class="login-box">
+                            <h1>📱 Família Connect</h1>
+                            <div class="perfil-selector" id="perfilSelector">
+                                <div class="perfil-card" data-perfil="pai">
+                                    <span class="perfil-avatar">👨</span>
+                                    <span class="perfil-nome">Papai</span>
+                                </div>
+                                <div class="perfil-card" data-perfil="mae">
+                                    <span class="perfil-avatar">👩</span>
+                                    <span class="perfil-nome">Mamãe</span>
+                                </div>
+                            </div>
+                            <input type="password" id="senha" class="input-senha" placeholder="Digite sua senha">
+                            <div class="checkbox-area">
+                                <input type="checkbox" id="keepLogged">
+                                <label>Manter-me conectado</label>
+                            </div>
+                            <button class="login-btn" id="loginBtn">✨ Entrar ✨</button>
+                            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
+                                👨 Senha: pai123 | 👩 Senha: mae123
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                let perfilSelecionado = 'pai';
+                document.querySelectorAll('[data-perfil]').forEach(el => {
+                    el.onclick = () => {
+                        document.querySelectorAll('[data-perfil]').forEach(e => e.classList.remove('selected'));
+                        el.classList.add('selected');
+                        perfilSelecionado = el.dataset.perfil;
+                    };
+                });
+                document.querySelector('[data-perfil="pai"]').classList.add('selected');
+                
+                document.getElementById('loginBtn').onclick = () => {
+                    const senha = document.getElementById('senha').value;
+                    const keepLogged = document.getElementById('keepLogged').checked;
+                    const usuario = USUARIOS[perfilSelecionado];
+                    
+                    if (usuario && usuario.senha === senha) {
+                        currentUser = { ...usuario };
+                        saveSession(usuario.id, keepLogged);
+                        renderizarApp();
+                    } else {
+                        alert('Senha incorreta!');
+                    }
+                };
+                return;
+            }
+            
+            let conteudo = '';
+            if (activeTab === 'live') {
+                conteudo = renderizarLive();
+            } else {
+                conteudo = `
+                    <div class="feed-header">
+                        <div class="logo-area">
+                            <h2>📱 Família Connect</h2>
+                            <span class="online-badge"></span>
+                        </div>
+                        <div class="header-actions">
+                            <button class="icon-btn" onclick="window.modalPerfil()">⚙️</button>
+                            <button class="icon-btn" onclick="window.logout()">🚪</button>
+                        </div>
+                    </div>
+                    <div class="main-content">
+                        <div id="feedContainer"></div>
+                    </div>
+                    <button class="fab" id="fabBtn">+</button>
+                `;
+            }
+            
+            const menuHtml = `
+                <div class="bottom-nav">
+                    <div class="nav-item ${activeTab === 'feed' ? 'active' : ''}" data-tab="feed">
+                        <div class="nav-icon">📱</div>
+                        <div class="nav-label">Feed</div>
+                    </div>
+                    <div class="nav-item ${activeTab === 'live' ? 'active' : ''}" data-tab="live">
+                        <div class="nav-icon">📹</div>
+                        <div class="nav-label">Live</div>
+                    </div>
+                </div>
+            `;
+            
+            appDiv.innerHTML = conteudo + menuHtml;
+            
+            document.querySelectorAll('[data-tab]').forEach(el => {
+                el.onclick = () => {
+                    activeTab = el.dataset.tab;
+                    renderizarApp();
+                };
+            });
+            
+            const fab = document.getElementById('fabBtn');
+            if (fab) fab.onclick = () => renderizarModalCriacao();
+            
+            if (activeTab === 'feed') {
+                renderizarFeed();
+            } else if (activeTab === 'live') {
+                setTimeout(() => {
+                    if (liveActive) renderizarLiveContent();
+                }, 100);
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            clearSession();
+            renderizarApp();
+        }
+
+        // Handlers globais
+        window.excluirPostHandler = excluirPost;
+        window.curtirHandler = curtirPost;
+        window.comentarHandler = (postId) => {
+            const input = document.getElementById(`comentarioInput-${postId}`);
+            if (input && input.value) {
+                adicionarComentario(postId, input.value);
+                input.value = '';
+            }
+        };
+        window.focarComentario = (postId) => {
+            const input = document.getElementById(`comentarioInput-${postId}`);
+            if (input) input.focus();
+        };
+        window.fecharModal = fecharModal;
+        window.logout = logout;
+        window.modalPerfil = modalPerfil;
+        window.modalAlterarSenha = modalAlterarSenha;
+        window.modalFotoPerfil = modalFotoPerfil;
+        window.iniciarLiveHandler = iniciarLive;
+        window.encerrarLiveHandler = encerrarLive;
+        window.curtirLiveHandler = curtirLive;
+        window.salvarLiveHandler = salvarLiveNoFeed;
+        window.enviarMensagemLiveHandler = () => {
+            const input = document.getElementById('liveInput');
+            if (input && input.value) {
+                adicionarMensagemLive(input.value);
+                input.value = '';
+                criarChuvaEmojis();
+            }
+        };
+
+        // Inicializar
+        loadData();
+        renderizarApp();
+    </script>
+</body>
+</html>
             -webkit-tap-highlight-color: transparent;
         }
 
