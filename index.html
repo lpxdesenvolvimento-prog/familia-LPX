@@ -61,6 +61,7 @@
             }
         }
 
+        /* Tela de Login */
         .login-screen {
             position: fixed;
             top: 0;
@@ -491,6 +492,7 @@
             transition: width 0.3s;
         }
 
+        /* Live */
         .live-container {
             background: #000;
             min-height: 100vh;
@@ -629,6 +631,42 @@
             padding: 50px;
             color: #999;
         }
+
+        /* Botões da câmera */
+        .camera-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .camera-btn {
+            flex: 1;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .camera-btn:active { transform: scale(0.98); }
+
+        .camera-preview {
+            width: 100%;
+            background: #000;
+            border-radius: 15px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .camera-preview video, .camera-preview img {
+            width: 100%;
+            border-radius: 15px;
+            max-height: 300px;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -653,6 +691,10 @@
             mediaRecorder: null,
             recordedChunks: []
         };
+
+        // Camera state for photo/video capture
+        let cameraStream = null;
+        let isRecording = false;
 
         const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
 
@@ -681,10 +723,11 @@
         }
 
         function loadData() {
-            const savedPosts = localStorage.getItem('familia_pro_data');
+            const savedPosts = localStorage.getItem('familia_pro_data_v2');
             if (savedPosts) {
                 try {
                     state.posts = JSON.parse(savedPosts);
+                    console.log('Posts carregados:', state.posts.length);
                 } catch(e) {
                     state.posts = [];
                 }
@@ -697,7 +740,7 @@
                         usuarioId: 'mae',
                         usuarioNome: 'Mamãe 👩',
                         tipo: 'foto',
-                        url: 'https://picsum.photos/id/20/400/400',
+                        dataUrl: 'https://picsum.photos/id/20/400/400',
                         legenda: 'Dia especial em família! 💕',
                         data: new Date(Date.now() - 86400000).toISOString(),
                         curtidas: ['pai'],
@@ -708,7 +751,7 @@
                         usuarioId: 'pai',
                         usuarioNome: 'Papai 👨',
                         tipo: 'foto',
-                        url: 'https://picsum.photos/id/100/400/400',
+                        dataUrl: 'https://picsum.photos/id/100/400/400',
                         legenda: 'Almoço em família 🍝',
                         data: new Date(Date.now() - 172800000).toISOString(),
                         curtidas: ['mae'],
@@ -738,7 +781,8 @@
         }
 
         function saveData() {
-            localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
+            localStorage.setItem('familia_pro_data_v2', JSON.stringify(state.posts));
+            console.log('Dados salvos!');
         }
 
         function saveAvatar(usuarioId, avatarData) {
@@ -754,77 +798,174 @@
             USUARIOS[usuarioId].senha = novaSenha;
         }
 
-        // FUNÇÃO PRINCIPAL - POSTAR FOTO/VIDEO (CORRIGIDA)
-        function postarMidia(file, legenda) {
-            return new Promise((resolve, reject) => {
-                if (!file) {
-                    reject('Selecione um arquivo');
-                    return;
-                }
-                
-                // Verifica tamanho (máximo 30MB)
-                if (file.size > 30 * 1024 * 1024) {
-                    reject('Arquivo muito grande! Máximo 30MB.');
-                    return;
-                }
-                
-                // Verifica tipo
-                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-                    reject('Formato não suportado. Use foto ou vídeo.');
-                    return;
-                }
-                
-                const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    try {
-                        const novoPost = {
-                            id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
-                            usuarioId: state.currentUser.id,
-                            usuarioNome: state.currentUser.nome,
-                            tipo: tipo,
-                            url: e.target.result,
-                            legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
-                            data: new Date().toISOString(),
-                            curtidas: [],
-                            comentarios: []
-                        };
-                        
-                        state.posts.unshift(novoPost);
-                        saveData();
-                        resolve(true);
-                    } catch(err) {
-                        reject('Erro ao processar: ' + err.message);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    reject('Erro ao ler o arquivo');
-                };
-                
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // IMPORTAR MÚLTIPLOS ARQUIVOS (CORRIGIDO)
-        async function importarMultiplos(files, legenda) {
-            let sucessos = 0;
-            let erros = 0;
+        // FUNÇÃO PARA ADICIONAR POST (SALVA COMO dataUrl)
+        function adicionarPost(tipo, dataUrl, legenda, isLive = false, liveInfo = null) {
+            const novoPost = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
+                usuarioId: state.currentUser.id,
+                usuarioNome: state.currentUser.nome,
+                tipo: tipo,
+                dataUrl: dataUrl,
+                legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: []
+            };
             
-            for (let i = 0; i < Math.min(files.length, 10); i++) {
-                const file = files[i];
-                try {
-                    await postarMidia(file, legenda);
-                    sucessos++;
-                } catch(err) {
-                    console.error('Erro:', err);
-                    erros++;
-                }
+            if (isLive && liveInfo) {
+                novoPost.isLiveRecording = true;
+                novoPost.liveMessages = liveInfo.messages;
+                novoPost.liveLikes = liveInfo.likes;
             }
             
+            state.posts.unshift(novoPost);
+            saveData();
             renderizarApp();
-            return { sucessos, erros };
+            return true;
+        }
+
+        // TIRAR FOTO COM A CÂMERA
+        async function tirarFoto() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: state.cameraFacing }
+                });
+                
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                stream.getTracks().forEach(track => track.stop());
+                
+                modalAdicionarLegenda(dataUrl, 'foto');
+                
+            } catch(err) {
+                alert('Erro ao acessar câmera: ' + err.message);
+            }
+        }
+
+        // GRAVAR VÍDEO COM A CÂMERA
+        async function gravarVideo() {
+            if (isRecording) {
+                // Parar gravação
+                if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+                    state.mediaRecorder.stop();
+                    isRecording = false;
+                    document.getElementById('btnGravar').textContent = '🎥 Gravar Vídeo';
+                    document.getElementById('btnGravar').style.background = '#667eea';
+                    
+                    state.mediaRecorder.onstop = () => {
+                        const blob = new Blob(state.recordedChunks, { type: 'video/mp4' });
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            modalAdicionarLegenda(e.target.result, 'video');
+                        };
+                        reader.readAsDataURL(blob);
+                        state.recordedChunks = [];
+                    };
+                }
+                return;
+            }
+            
+            // Iniciar gravação
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: state.cameraFacing },
+                    audio: true
+                });
+                
+                const videoElement = document.getElementById('cameraPreview');
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                }
+                
+                state.recordedChunks = [];
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        state.recordedChunks.push(event.data);
+                    }
+                };
+                state.mediaRecorder.start(1000);
+                isRecording = true;
+                
+                document.getElementById('btnGravar').textContent = '⏹️ Parar Gravação';
+                document.getElementById('btnGravar').style.background = '#dc3545';
+                
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                }
+                cameraStream = stream;
+                
+            } catch(err) {
+                alert('Erro ao gravar: ' + err.message);
+            }
+        }
+
+        function modalAdicionarLegenda(dataUrl, tipo) {
+            const modalHtml = `
+                <div class="modal" id="legendaModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>${tipo === 'foto' ? '📸 Adicionar Foto' : '🎥 Adicionar Vídeo'}</h3>
+                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                ${tipo === 'foto' 
+                                    ? `<img src="${dataUrl}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`
+                                    : `<video src="${dataUrl}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`
+                                }
+                            </div>
+                            <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('confirmarPublicar').onclick = () => {
+                const legenda = document.getElementById('legendaInput').value;
+                adicionarPost(tipo, dataUrl, legenda);
+                alert('✅ Publicado com sucesso!');
+                fecharModal();
+                renderizarApp();
+            };
+        }
+
+        // FUNÇÃO PARA IMPORTAR DA GALERIA
+        function importarDaGaleria() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,video/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 50 * 1024 * 1024) {
+                        alert('Arquivo muito grande! Máximo 50MB.');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
+                        modalAdicionarLegenda(ev.target.result, tipo);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
         }
 
         function curtirPost(postId) {
@@ -981,30 +1122,19 @@
             }
             
             const videoBlob = new Blob(state.recordedChunks, { type: 'video/mp4' });
-            const videoUrl = URL.createObjectURL(videoBlob);
-            
-            const novoPost = {
-                id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
-                usuarioId: state.currentUser.id,
-                usuarioNome: state.currentUser.nome,
-                tipo: 'video',
-                url: videoUrl,
-                legenda: `Live gravada 🔴 - ${state.liveMessages.length} comentários, ${state.liveLikes} curtidas`,
-                data: new Date().toISOString(),
-                curtidas: [],
-                comentarios: [],
-                liveMessages: [...state.liveMessages],
-                liveLikes: state.liveLikes,
-                isLiveRecording: true
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const liveInfo = {
+                    messages: [...state.liveMessages],
+                    likes: state.liveLikes
+                };
+                adicionarPost('video', e.target.result, `Live gravada 🔴`, true, liveInfo);
+                alert('✅ Live salva no feed!');
+                encerrarLive();
+                state.activeTab = 'feed';
+                renderizarApp();
             };
-            
-            state.posts.unshift(novoPost);
-            saveData();
-            
-            alert('✅ Live salva no feed!');
-            encerrarLive();
-            state.activeTab = 'feed';
-            renderizarApp();
+            reader.readAsDataURL(videoBlob);
         }
 
         // PERFIL
@@ -1119,9 +1249,6 @@
                         fecharModal();
                         renderizarApp();
                     };
-                    reader.onerror = () => {
-                        alert('❌ Erro ao ler a imagem');
-                    };
                     reader.readAsDataURL(file);
                 }
             };
@@ -1174,7 +1301,7 @@
             };
         }
 
-        // MODAL DE CRIAÇÃO (SIMPLIFICADO E CORRIGIDO)
+        // MODAL DE CRIAÇÃO COM CÂMERA
         function renderizarModalCriacao() {
             const modalHtml = `
                 <div class="modal" id="criarModal">
@@ -1184,20 +1311,18 @@
                             <button class="icon-btn" onclick="window.fecharModal()">✕</button>
                         </div>
                         <div class="modal-body">
-                            <div class="upload-avatar" id="uploadArea">
-                                📁 Clique para selecionar UMA foto ou vídeo
-                            </div>
-                            <div id="previewArea" style="text-align: center; margin: 10px 0; display: none;"></div>
-                            <input type="file" id="fileInputPost" accept="image/*,video/*" style="display: none;">
-                            
-                            <div class="progress-bar" id="progressBar" style="display: none;">
-                                <div class="progress-fill" id="progressFill"></div>
+                            <div class="camera-buttons">
+                                <button class="camera-btn" id="btnTirarFoto">📸 Tirar Foto</button>
+                                <button class="camera-btn" id="btnGravarVideo">🎥 Gravar Vídeo</button>
                             </div>
                             
-                            <textarea id="legendaPost" rows="2" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            <div class="upload-avatar" id="importarGaleria">
+                                📁 Importar da Galeria
+                            </div>
                             
-                            <button class="login-btn" id="publicarBtn">📤 Publicar</button>
-                            <button class="login-btn" id="importarMultiplasBtn" style="background: #28a745; margin-top: 10px;">📁 Importar Múltiplas (até 10)</button>
+                            <div class="camera-preview" id="cameraPreviewArea" style="display: none;">
+                                <video id="cameraPreview" autoplay playsinline style="width: 100%; border-radius: 15px;"></video>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1205,73 +1330,59 @@
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             
-            document.getElementById('uploadArea').onclick = () => document.getElementById('fileInputPost').click();
+            let currentStream = null;
             
-            document.getElementById('fileInputPost').onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        const preview = document.getElementById('previewArea');
-                        if (file.type.startsWith('image/')) {
-                            preview.innerHTML = `<img src="${ev.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`;
-                        } else {
-                            preview.innerHTML = `<video src="${ev.target.result}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`;
-                        }
-                        preview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                }
+            document.getElementById('btnTirarFoto').onclick = async () => {
+                fecharModal();
+                await tirarFoto();
             };
             
-            document.getElementById('publicarBtn').onclick = async () => {
-                const fileInput = document.getElementById('fileInputPost');
-                const legenda = document.getElementById('legendaPost').value;
-                
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    alert('❌ Selecione uma foto ou vídeo!');
-                    return;
-                }
-                
-                const progressBar = document.getElementById('progressBar');
-                const progressFill = document.getElementById('progressFill');
-                progressBar.style.display = 'block';
-                progressFill.style.width = '50%';
-                
-                try {
-                    await postarMidia(fileInput.files[0], legenda);
-                    progressFill.style.width = '100%';
-                    setTimeout(() => {
-                        alert('✅ Publicado com sucesso!');
-                        fecharModal();
-                        renderizarApp();
-                    }, 500);
-                } catch(erro) {
-                    alert('❌ ' + erro);
-                    progressBar.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }
-            };
-            
-            document.getElementById('importarMultiplasBtn').onclick = () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.multiple = true;
-                input.accept = 'image/*,video/*';
-                input.onchange = async (e) => {
-                    const files = Array.from(e.target.files);
-                    const legenda = document.getElementById('legendaPost').value;
-                    
-                    if (files.length > 0) {
-                        const result = await importarMultiplos(files, legenda);
-                        alert(`✅ ${result.sucessos} arquivos importados! ${result.erros > 0 ? `(${result.erros} erros)` : ''}`);
-                        fecharModal();
-                        renderizarApp();
-                    } else {
-                        alert('Selecione pelo menos um arquivo!');
+            document.getElementById('btnGravarVideo').onclick = async () => {
+                const btn = document.getElementById('btnGravarVideo');
+                if (isRecording) {
+                    await gravarVideo();
+                    btn.textContent = '🎥 Gravar Vídeo';
+                    btn.style.background = '#667eea';
+                    document.getElementById('cameraPreviewArea').style.display = 'none';
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        currentStream = null;
                     }
-                };
-                input.click();
+                } else {
+                    document.getElementById('cameraPreviewArea').style.display = 'block';
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: 'user' },
+                            audio: true
+                        });
+                        currentStream = stream;
+                        const video = document.getElementById('cameraPreview');
+                        video.srcObject = stream;
+                        video.play();
+                        btn.textContent = '⏹️ Parar Gravação';
+                        btn.style.background = '#dc3545';
+                        
+                        state.recordedChunks = [];
+                        state.mediaRecorder = new MediaRecorder(stream);
+                        state.mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0) {
+                                state.recordedChunks.push(event.data);
+                            }
+                        };
+                        state.mediaRecorder.start(1000);
+                        isRecording = true;
+                    } catch(err) {
+                        alert('Erro: ' + err.message);
+                        document.getElementById('cameraPreviewArea').style.display = 'none';
+                        btn.textContent = '🎥 Gravar Vídeo';
+                        btn.style.background = '#667eea';
+                    }
+                }
+            };
+            
+            document.getElementById('importarGaleria').onclick = () => {
+                fecharModal();
+                importarDaGaleria();
             };
         }
 
@@ -1280,6 +1391,14 @@
             if (modal) modal.remove();
             const modalCriar = document.getElementById('criarModal');
             if (modalCriar) modalCriar.remove();
+            const modalLegenda = document.getElementById('legendaModal');
+            if (modalLegenda) modalLegenda.remove();
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            isRecording = false;
         }
 
         function formatarData(dataISO) {
@@ -1324,8 +1443,8 @@
                         
                         <div class="post-media">
                             ${post.tipo === 'foto' 
-                                ? `<img src="${post.url}" alt="Foto" loading="lazy">`
-                                : `<video src="${post.url}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
+                                ? `<img src="${post.dataUrl}" alt="Foto" loading="lazy">`
+                                : `<video src="${post.dataUrl}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
                             }
                             ${post.isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
                         </div>
@@ -1590,6 +1709,8 @@
                 criarChuvaEmojis();
             }
         };
+        window.tirarFotoHandler = tirarFoto;
+        window.gravarVideoHandler = gravarVideo;
 
         loadData();
         if (checkAutoLogin()) {
