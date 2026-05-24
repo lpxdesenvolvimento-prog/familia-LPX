@@ -28,6 +28,7 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.3);
         }
 
+        /* Chuva de emojis */
         .emoji-container {
             position: fixed;
             top: 0;
@@ -134,6 +135,11 @@
             margin-bottom: 15px;
         }
 
+        .input-senha:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         .checkbox-area {
             display: flex;
             align-items: center;
@@ -155,6 +161,7 @@
 
         .login-btn:active { transform: scale(0.98); }
 
+        /* Header do Feed */
         .feed-header {
             background: white;
             padding: 15px;
@@ -207,6 +214,7 @@
             padding: 5px;
         }
 
+        /* Menu inferior */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -248,6 +256,7 @@
             padding-top: 10px;
         }
 
+        /* Posts */
         .post {
             background: white;
             margin-bottom: 12px;
@@ -303,16 +312,10 @@
             position: relative;
         }
 
-        .post-media img {
+        .post-media img, .post-media video {
             width: 100%;
             max-height: 500px;
             object-fit: cover;
-        }
-
-        .post-media video {
-            width: 100%;
-            max-height: 500px;
-            background: #000;
         }
 
         .live-badge-post {
@@ -396,6 +399,7 @@
             cursor: pointer;
         }
 
+        /* Modal */
         .modal {
             position: fixed;
             top: 0;
@@ -632,7 +636,6 @@
             color: #999;
         }
 
-        /* Botões da câmera */
         .camera-buttons {
             display: flex;
             gap: 15px;
@@ -673,6 +676,7 @@
     <div class="app" id="app"></div>
 
     <script>
+        // ==================== USUÁRIOS ====================
         let USUARIOS = {
             pai: { id: 'pai', nome: 'Papai 👨', senha: 'pai123', avatar: '👨', avatarImg: null, status: 'online' },
             mae: { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123', avatar: '👩', avatarImg: null, status: 'online' }
@@ -692,7 +696,6 @@
             recordedChunks: []
         };
 
-        // Camera state for photo/video capture
         let cameraStream = null;
         let isRecording = false;
 
@@ -703,14 +706,14 @@
             container.className = 'emoji-container';
             document.body.appendChild(container);
             
-            for(let i = 0; i < 20; i++) {
+            for(let i = 0; i < 25; i++) {
                 setTimeout(() => {
                     const emoji = EMOJIS_RAIN[Math.floor(Math.random() * EMOJIS_RAIN.length)];
                     const emojiDiv = document.createElement('div');
                     emojiDiv.className = 'floating-emoji';
                     emojiDiv.textContent = emoji;
                     emojiDiv.style.left = Math.random() * 100 + '%';
-                    emojiDiv.style.fontSize = (Math.random() * 25 + 20) + 'px';
+                    emojiDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
                     emojiDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
                     container.appendChild(emojiDiv);
                     
@@ -718,12 +721,13 @@
                         emojiDiv.remove();
                         if (container.children.length === 0) container.remove();
                     }, 2500);
-                }, i * 50);
+                }, i * 60);
             }
         }
 
+        // ==================== ARMAZENAMENTO PERMANENTE ====================
         function loadData() {
-            const savedPosts = localStorage.getItem('familia_pro_data_v2');
+            const savedPosts = localStorage.getItem('familia_connect_posts');
             if (savedPosts) {
                 try {
                     state.posts = JSON.parse(savedPosts);
@@ -761,7 +765,7 @@
                 saveData();
             }
             
-            const savedAvatars = localStorage.getItem('familia_avatars');
+            const savedAvatars = localStorage.getItem('familia_connect_avatars');
             if (savedAvatars) {
                 try {
                     const avatars = JSON.parse(savedAvatars);
@@ -770,7 +774,7 @@
                 } catch(e) {}
             }
             
-            const savedPasswords = localStorage.getItem('familia_passwords');
+            const savedPasswords = localStorage.getItem('familia_connect_passwords');
             if (savedPasswords) {
                 try {
                     const passwords = JSON.parse(savedPasswords);
@@ -781,25 +785,26 @@
         }
 
         function saveData() {
-            localStorage.setItem('familia_pro_data_v2', JSON.stringify(state.posts));
-            console.log('Dados salvos!');
+            localStorage.setItem('familia_connect_posts', JSON.stringify(state.posts));
+            console.log('Dados salvos! Total de posts:', state.posts.length);
         }
 
         function saveAvatar(usuarioId, avatarData) {
-            const avatars = JSON.parse(localStorage.getItem('familia_avatars') || '{}');
+            const avatars = JSON.parse(localStorage.getItem('familia_connect_avatars') || '{}');
             avatars[usuarioId] = avatarData;
-            localStorage.setItem('familia_avatars', JSON.stringify(avatars));
+            localStorage.setItem('familia_connect_avatars', JSON.stringify(avatars));
         }
 
         function savePassword(usuarioId, novaSenha) {
-            const passwords = JSON.parse(localStorage.getItem('familia_passwords') || '{}');
+            const passwords = JSON.parse(localStorage.getItem('familia_connect_passwords') || '{}');
             passwords[usuarioId] = novaSenha;
-            localStorage.setItem('familia_passwords', JSON.stringify(passwords));
+            localStorage.setItem('familia_connect_passwords', JSON.stringify(passwords));
             USUARIOS[usuarioId].senha = novaSenha;
         }
 
-        // FUNÇÃO PARA ADICIONAR POST (SALVA COMO dataUrl)
-        function adicionarPost(tipo, dataUrl, legenda, isLive = false, liveInfo = null) {
+        // ==================== FUNÇÕES DO FEED ====================
+        
+        function adicionarPost(tipo, dataUrl, legenda, isLiveRecording = false, liveInfo = null) {
             const novoPost = {
                 id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
                 usuarioId: state.currentUser.id,
@@ -812,10 +817,11 @@
                 comentarios: []
             };
             
-            if (isLive && liveInfo) {
+            if (isLiveRecording && liveInfo) {
                 novoPost.isLiveRecording = true;
                 novoPost.liveMessages = liveInfo.messages;
                 novoPost.liveLikes = liveInfo.likes;
+                novoPost.legenda = `Live gravada 🔴 - ${liveInfo.messages.length} comentários, ${liveInfo.likes} curtidas`;
             }
             
             state.posts.unshift(novoPost);
@@ -828,7 +834,7 @@
         async function tirarFoto() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: state.cameraFacing }
+                    video: { facingMode: 'user' }
                 });
                 
                 const video = document.createElement('video');
@@ -846,7 +852,7 @@
                 
                 stream.getTracks().forEach(track => track.stop());
                 
-                modalAdicionarLegenda(dataUrl, 'foto');
+                abrirModalLegenda(dataUrl, 'foto');
                 
             } catch(err) {
                 alert('Erro ao acessar câmera: ' + err.message);
@@ -856,33 +862,40 @@
         // GRAVAR VÍDEO COM A CÂMERA
         async function gravarVideo() {
             if (isRecording) {
-                // Parar gravação
                 if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
                     state.mediaRecorder.stop();
                     isRecording = false;
-                    document.getElementById('btnGravar').textContent = '🎥 Gravar Vídeo';
-                    document.getElementById('btnGravar').style.background = '#667eea';
+                    document.getElementById('btnGravarVideo').textContent = '🎥 Gravar Vídeo';
+                    document.getElementById('btnGravarVideo').style.background = '#667eea';
+                    document.getElementById('cameraPreviewArea').style.display = 'none';
                     
                     state.mediaRecorder.onstop = () => {
                         const blob = new Blob(state.recordedChunks, { type: 'video/mp4' });
                         const reader = new FileReader();
                         reader.onload = function(e) {
-                            modalAdicionarLegenda(e.target.result, 'video');
+                            abrirModalLegenda(e.target.result, 'video');
                         };
                         reader.readAsDataURL(blob);
                         state.recordedChunks = [];
                     };
+                    
+                    if (cameraStream) {
+                        cameraStream.getTracks().forEach(track => track.stop());
+                        cameraStream = null;
+                    }
                 }
                 return;
             }
             
-            // Iniciar gravação
             try {
+                document.getElementById('cameraPreviewArea').style.display = 'block';
+                
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: state.cameraFacing },
+                    video: { facingMode: 'user' },
                     audio: true
                 });
                 
+                cameraStream = stream;
                 const videoElement = document.getElementById('cameraPreview');
                 if (videoElement) {
                     videoElement.srcObject = stream;
@@ -899,20 +912,38 @@
                 state.mediaRecorder.start(1000);
                 isRecording = true;
                 
-                document.getElementById('btnGravar').textContent = '⏹️ Parar Gravação';
-                document.getElementById('btnGravar').style.background = '#dc3545';
-                
-                if (cameraStream) {
-                    cameraStream.getTracks().forEach(track => track.stop());
-                }
-                cameraStream = stream;
+                document.getElementById('btnGravarVideo').textContent = '⏹️ Parar Gravação';
+                document.getElementById('btnGravarVideo').style.background = '#dc3545';
                 
             } catch(err) {
                 alert('Erro ao gravar: ' + err.message);
+                document.getElementById('cameraPreviewArea').style.display = 'none';
             }
         }
 
-        function modalAdicionarLegenda(dataUrl, tipo) {
+        function importarGaleria() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,video/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 50 * 1024 * 1024) {
+                        alert('Arquivo muito grande! Máximo 50MB.');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
+                        abrirModalLegenda(ev.target.result, tipo);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        function abrirModalLegenda(dataUrl, tipo) {
             const modalHtml = `
                 <div class="modal" id="legendaModal">
                     <div class="modal-content">
@@ -928,6 +959,9 @@
                                 }
                             </div>
                             <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
+                            <div class="progress-bar" id="progressBar" style="display: none;">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
                             <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
                         </div>
                     </div>
@@ -941,31 +975,7 @@
                 adicionarPost(tipo, dataUrl, legenda);
                 alert('✅ Publicado com sucesso!');
                 fecharModal();
-                renderizarApp();
             };
-        }
-
-        // FUNÇÃO PARA IMPORTAR DA GALERIA
-        function importarDaGaleria() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,video/*';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    if (file.size > 50 * 1024 * 1024) {
-                        alert('Arquivo muito grande! Máximo 50MB.');
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-                        modalAdicionarLegenda(ev.target.result, tipo);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-            input.click();
         }
 
         function curtirPost(postId) {
@@ -1009,7 +1019,7 @@
             }
         }
 
-        // LIVE FUNCTIONS
+        // ==================== LIVE ====================
         async function iniciarLive() {
             state.liveActive = true;
             state.liveMessages = [];
@@ -1018,7 +1028,7 @@
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: state.cameraFacing },
+                    video: { facingMode: 'user' },
                     audio: true
                 });
                 
@@ -1046,41 +1056,6 @@
             setTimeout(() => {
                 adicionarMensagemLive('🎥 Live iniciada!', 'Sistema');
             }, 500);
-        }
-
-        function trocarCamera() {
-            if (!state.liveActive) return;
-            
-            state.cameraFacing = state.cameraFacing === 'user' ? 'environment' : 'user';
-            
-            if (state.liveStream) {
-                state.liveStream.getTracks().forEach(track => track.stop());
-                if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
-                    state.mediaRecorder.stop();
-                }
-                
-                navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: state.cameraFacing },
-                    audio: true
-                }).then(stream => {
-                    const videoElement = document.getElementById('liveVideoElement');
-                    if (videoElement) {
-                        videoElement.srcObject = stream;
-                        videoElement.play();
-                    }
-                    state.liveStream = stream;
-                    state.recordedChunks = [];
-                    state.mediaRecorder = new MediaRecorder(stream);
-                    state.mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            state.recordedChunks.push(event.data);
-                        }
-                    };
-                    state.mediaRecorder.start(2000);
-                }).catch(err => {
-                    alert('Erro ao trocar câmera: ' + err.message);
-                });
-            }
         }
 
         function encerrarLive() {
@@ -1117,7 +1092,7 @@
 
         function salvarLiveNoFeed() {
             if (state.recordedChunks.length === 0) {
-                alert('Aguardando gravação. Aguarde 3 segundos e tente novamente.');
+                alert('Aguardando gravação. Aguarde alguns segundos e tente novamente.');
                 return;
             }
             
@@ -1128,7 +1103,7 @@
                     messages: [...state.liveMessages],
                     likes: state.liveLikes
                 };
-                adicionarPost('video', e.target.result, `Live gravada 🔴`, true, liveInfo);
+                adicionarPost('video', e.target.result, '', true, liveInfo);
                 alert('✅ Live salva no feed!');
                 encerrarLive();
                 state.activeTab = 'feed';
@@ -1137,7 +1112,7 @@
             reader.readAsDataURL(videoBlob);
         }
 
-        // PERFIL
+        // ==================== PERFIL / SENHA ====================
         function modalAlterarSenha() {
             const modalHtml = `
                 <div class="modal" id="configModal">
@@ -1184,8 +1159,8 @@
         }
 
         function modalFotoPerfil() {
-            let emojiSelecionado = state.currentUser.avatar || '👨';
-            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕'];
+            let emojiSelecionado = state.currentUser.avatar || (state.currentUser.id === 'pai' ? '👨' : '👩');
+            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕', '😍', '🎉', '✨', '🌟'];
             
             const modalHtml = `
                 <div class="modal" id="configModal">
@@ -1244,7 +1219,8 @@
                         USUARIOS[state.currentUser.id].avatarImg = ev.target.result;
                         USUARIOS[state.currentUser.id].avatar = null;
                         saveAvatar(state.currentUser.id, ev.target.result);
-                        state.currentUser = { ...USUARIOS[state.currentUser.id] };
+                        state.currentUser.avatarImg = ev.target.result;
+                        state.currentUser.avatar = null;
                         alert('✅ Foto atualizada!');
                         fecharModal();
                         renderizarApp();
@@ -1257,7 +1233,8 @@
                 USUARIOS[state.currentUser.id].avatar = emojiSelecionado;
                 USUARIOS[state.currentUser.id].avatarImg = null;
                 saveAvatar(state.currentUser.id, null);
-                state.currentUser = { ...USUARIOS[state.currentUser.id] };
+                state.currentUser.avatar = emojiSelecionado;
+                state.currentUser.avatarImg = null;
                 alert('✅ Avatar atualizado!');
                 fecharModal();
                 renderizarApp();
@@ -1276,7 +1253,7 @@
                             <div style="text-align: center; margin-bottom: 20px;">
                                 ${state.currentUser.avatarImg 
                                     ? `<img src="${state.currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px; object-fit: cover;">`
-                                    : `<div style="font-size: 60px;">${state.currentUser.avatar || '👤'}</div>`
+                                    : `<div style="font-size: 60px;">${state.currentUser.avatar || (state.currentUser.id === 'pai' ? '👨' : '👩')}</div>`
                                 }
                                 <h3 style="margin-top: 10px;">${state.currentUser.nome}</h3>
                             </div>
@@ -1301,7 +1278,7 @@
             };
         }
 
-        // MODAL DE CRIAÇÃO COM CÂMERA
+        // ==================== MODAL DE CRIAÇÃO ====================
         function renderizarModalCriacao() {
             const modalHtml = `
                 <div class="modal" id="criarModal">
@@ -1316,7 +1293,7 @@
                                 <button class="camera-btn" id="btnGravarVideo">🎥 Gravar Vídeo</button>
                             </div>
                             
-                            <div class="upload-avatar" id="importarGaleria">
+                            <div class="upload-avatar" id="importarGaleriaBtn">
                                 📁 Importar da Galeria
                             </div>
                             
@@ -1330,59 +1307,18 @@
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             
-            let currentStream = null;
-            
-            document.getElementById('btnTirarFoto').onclick = async () => {
+            document.getElementById('btnTirarFoto').onclick = () => {
                 fecharModal();
-                await tirarFoto();
+                tirarFoto();
             };
             
-            document.getElementById('btnGravarVideo').onclick = async () => {
-                const btn = document.getElementById('btnGravarVideo');
-                if (isRecording) {
-                    await gravarVideo();
-                    btn.textContent = '🎥 Gravar Vídeo';
-                    btn.style.background = '#667eea';
-                    document.getElementById('cameraPreviewArea').style.display = 'none';
-                    if (currentStream) {
-                        currentStream.getTracks().forEach(track => track.stop());
-                        currentStream = null;
-                    }
-                } else {
-                    document.getElementById('cameraPreviewArea').style.display = 'block';
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({
-                            video: { facingMode: 'user' },
-                            audio: true
-                        });
-                        currentStream = stream;
-                        const video = document.getElementById('cameraPreview');
-                        video.srcObject = stream;
-                        video.play();
-                        btn.textContent = '⏹️ Parar Gravação';
-                        btn.style.background = '#dc3545';
-                        
-                        state.recordedChunks = [];
-                        state.mediaRecorder = new MediaRecorder(stream);
-                        state.mediaRecorder.ondataavailable = (event) => {
-                            if (event.data.size > 0) {
-                                state.recordedChunks.push(event.data);
-                            }
-                        };
-                        state.mediaRecorder.start(1000);
-                        isRecording = true;
-                    } catch(err) {
-                        alert('Erro: ' + err.message);
-                        document.getElementById('cameraPreviewArea').style.display = 'none';
-                        btn.textContent = '🎥 Gravar Vídeo';
-                        btn.style.background = '#667eea';
-                    }
-                }
+            document.getElementById('btnGravarVideo').onclick = () => {
+                gravarVideo();
             };
             
-            document.getElementById('importarGaleria').onclick = () => {
+            document.getElementById('importarGaleriaBtn').onclick = () => {
                 fecharModal();
-                importarDaGaleria();
+                importarGaleria();
             };
         }
 
@@ -1401,6 +1337,7 @@
             isRecording = false;
         }
 
+        // ==================== RENDERIZAÇÃO ====================
         function formatarData(dataISO) {
             const data = new Date(dataISO);
             const agora = new Date();
@@ -1416,12 +1353,17 @@
         }
 
         function renderizarFeed() {
+            const container = document.getElementById('feedContainer');
+            if (!container) return;
+            
             if (state.posts.length === 0) {
-                return '<div class="loading">📭 Nenhum post ainda. Clique no + para adicionar!</div>';
+                container.innerHTML = '<div class="loading">📭 Nenhum post ainda. Clique no + para adicionar!</div>';
+                return;
             }
             
-            return state.posts.map(post => {
+            container.innerHTML = state.posts.map(post => {
                 const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
+                const isLiveRecording = post.isLiveRecording === true;
                 
                 return `
                     <div class="post">
@@ -1429,7 +1371,7 @@
                             <div class="post-avatar">
                                 ${usuarioPost.avatarImg 
                                     ? `<img src="${usuarioPost.avatarImg}" class="post-avatar-img">`
-                                    : `<div style="font-size: 25px;">${usuarioPost.avatar || '👤'}</div>`
+                                    : `<div style="font-size: 25px;">${usuarioPost.avatar || (post.usuarioId === 'pai' ? '👨' : '👩')}</div>`
                                 }
                             </div>
                             <div class="post-info">
@@ -1446,7 +1388,7 @@
                                 ? `<img src="${post.dataUrl}" alt="Foto" loading="lazy">`
                                 : `<video src="${post.dataUrl}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
                             }
-                            ${post.isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
+                            ${isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
                         </div>
                         
                         ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
@@ -1539,6 +1481,19 @@
             const appDiv = document.getElementById('app');
             
             if (!state.currentUser) {
+                // Verificar login automático
+                const savedSession = localStorage.getItem('familia_connect_session');
+                if (savedSession) {
+                    try {
+                        const session = JSON.parse(savedSession);
+                        if (session.userId && session.expires > Date.now()) {
+                            state.currentUser = { ...USUARIOS[session.userId] };
+                            renderizarApp();
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                
                 appDiv.innerHTML = `
                     <div class="login-screen">
                         <div class="login-box">
@@ -1578,8 +1533,20 @@
                 
                 document.getElementById('loginBtn').onclick = () => {
                     const senha = document.getElementById('senha').value;
-                    const keep = document.getElementById('keepLogged').checked;
-                    if (!fazerLogin(perfilSelecionado, senha, keep)) {
+                    const usuario = USUARIOS[perfilSelecionado];
+                    
+                    if (usuario && usuario.senha === senha) {
+                        state.currentUser = { ...usuario };
+                        const keepLogged = document.getElementById('keepLogged').checked;
+                        
+                        if (keepLogged) {
+                            localStorage.setItem('familia_connect_session', JSON.stringify({
+                                userId: usuario.id,
+                                expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+                            }));
+                        }
+                        renderizarApp();
+                    } else {
                         alert('Senha incorreta!');
                     }
                 };
@@ -1602,7 +1569,7 @@
                         </div>
                     </div>
                     <div class="main-content">
-                        ${renderizarFeed()}
+                        <div id="feedContainer"></div>
                     </div>
                     <button class="fab" id="fabBtn">+</button>
                 `;
@@ -1632,52 +1599,19 @@
             
             const fab = document.getElementById('fabBtn');
             if (fab) fab.onclick = () => renderizarModalCriacao();
-        }
-
-        function fazerLogin(perfil, senha, keepLoggedIn) {
-            const usuario = USUARIOS[perfil];
-            if (usuario && usuario.senha === senha) {
-                state.currentUser = { ...usuario };
-                state.keepLoggedIn = keepLoggedIn;
-                
-                if (keepLoggedIn) {
-                    localStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 30 * 24 * 60 * 60 * 1000
-                    }));
-                } else {
-                    sessionStorage.setItem('familia_session', JSON.stringify({
-                        userId: usuario.id,
-                        expires: Date.now() + 24 * 60 * 60 * 1000
-                    }));
-                }
-                renderizarApp();
-                return true;
+            
+            if (state.activeTab === 'feed') {
+                renderizarFeed();
             }
-            return false;
         }
 
         function logout() {
             state.currentUser = null;
-            localStorage.removeItem('familia_session');
-            sessionStorage.removeItem('familia_session');
+            localStorage.removeItem('familia_connect_session');
             renderizarApp();
         }
 
-        function checkAutoLogin() {
-            const saved = localStorage.getItem('familia_session') || sessionStorage.getItem('familia_session');
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    if (session.expires > Date.now() && USUARIOS[session.userId]) {
-                        state.currentUser = { ...USUARIOS[session.userId] };
-                        return true;
-                    }
-                } catch(e) {}
-            }
-            return false;
-        }
-
+        // Handlers globais
         window.excluirPostHandler = excluirPost;
         window.curtirHandler = curtirPost;
         window.comentarHandler = (postId) => {
@@ -1699,7 +1633,6 @@
         window.iniciarLiveHandler = iniciarLive;
         window.encerrarLiveHandler = encerrarLive;
         window.curtirLiveHandler = curtirLive;
-        window.trocarCameraHandler = trocarCamera;
         window.salvarLiveHandler = salvarLiveNoFeed;
         window.enviarMensagemLiveHandler = () => {
             const input = document.getElementById('liveInput');
@@ -1709,15 +1642,13 @@
                 criarChuvaEmojis();
             }
         };
-        window.tirarFotoHandler = tirarFoto;
-        window.gravarVideoHandler = gravarVideo;
+        window.trocarCameraHandler = () => {
+            alert('Troca de câmera disponível na versão completa');
+        };
 
+        // Inicializar
         loadData();
-        if (checkAutoLogin()) {
-            renderizarApp();
-        } else {
-            renderizarApp();
-        }
+        renderizarApp();
     </script>
 </body>
 </html>
