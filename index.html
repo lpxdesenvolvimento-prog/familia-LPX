@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Família Connect - LPX Camera</title>
+    <title>Família Connect - Câmera Corrigida</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
         .app { max-width: 600px; margin: 0 auto; background: #fff; min-height: 100vh; }
         
-        /* Login */
         .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .login-box { background: white; border-radius: 30px; padding: 40px 25px; width: 90%; max-width: 350px; text-align: center; }
         .login-box h1 { color: #667eea; margin-bottom: 30px; }
@@ -18,7 +17,6 @@
         .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; margin: 15px 0; font-size: 16px; }
         .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
         
-        /* Navegação */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 20px; border-top: 1px solid #eee; z-index: 100; }
         .nav-item { text-align: center; cursor: pointer; padding: 5px; flex: 1; }
         .nav-item.active { color: #667eea; transform: translateY(-3px); }
@@ -28,9 +26,8 @@
         .header { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 99; }
         .fab { position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 200; }
         
-        /* Perfil */
-        .profile-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; color: white; position: relative; }
-        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; cursor: pointer; position: relative; }
+        .profile-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; color: white; }
+        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; overflow: hidden; cursor: pointer; position: relative; }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .edit-avatar-btn { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.6); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
         .profile-name { font-size: 24px; margin-bottom: 5px; }
@@ -38,7 +35,6 @@
         .stat { text-align: center; }
         .stat-number { font-size: 22px; font-weight: bold; }
         
-        /* Posts */
         .post { background: white; margin-bottom: 10px; border-bottom: 1px solid #eee; }
         .post-header { display: flex; padding: 12px; gap: 10px; align-items: center; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -59,7 +55,6 @@
         
         .empty { text-align: center; padding: 50px; color: #999; }
         
-        /* Modal */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; border-radius: 20px; width: 90%; max-width: 400px; padding: 20px; text-align: center; }
         .option-btn { width: 100%; padding: 15px; margin: 8px 0; border: none; border-radius: 15px; font-size: 16px; cursor: pointer; }
@@ -67,7 +62,6 @@
         .option-btn.secondary { background: #28a745; color: white; }
         .option-btn.danger { background: #dc3545; color: white; }
         
-        /* Câmera Dupla */
         .camera-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; }
         .camera-main { flex: 1; position: relative; background: #111; }
         .camera-main video { width: 100%; height: 100%; object-fit: cover; }
@@ -107,7 +101,7 @@
 
 <script>
     // ============================================================
-    // BANCO DE DADOS - IndexedDB
+    // BANCO DE DADOS
     // ============================================================
     
     let USUARIO_ATUAL = null;
@@ -118,7 +112,7 @@
     
     function abrirDB() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('FamiliaConnectDB', 3);
+            const request = indexedDB.open('FamiliaConnectDB', 4);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 db = request.result;
@@ -197,18 +191,17 @@
         return usuarioId === 'pai' ? '👨' : '👩';
     }
     
-    // Sessão
     function salvarSessao(usuario, manter) {
         const sessao = {
             usuarioId: usuario.id,
             usuarioNome: usuario.nome,
             expira: manter ? Date.now() + (30 * 24 * 60 * 60 * 1000) : Date.now() + (24 * 60 * 60 * 1000)
         };
-        localStorage.setItem('familia_sessao_v4', JSON.stringify(sessao));
+        localStorage.setItem('familia_sessao_v5', JSON.stringify(sessao));
     }
     
     function carregarSessao() {
-        const salva = localStorage.getItem('familia_sessao_v4');
+        const salva = localStorage.getItem('familia_sessao_v5');
         if (salva) {
             try {
                 const sessao = JSON.parse(salva);
@@ -226,10 +219,9 @@
     }
     
     function limparSessao() {
-        localStorage.removeItem('familia_sessao_v4');
+        localStorage.removeItem('familia_sessao_v5');
     }
     
-    // POSTAGEM
     async function adicionarPost(tipo, midia, legenda) {
         const novoPost = {
             id: Date.now(),
@@ -290,12 +282,11 @@
     }
     
     // ============================================================
-    // CÂMERA - Quadro GRANDE = Ambiente (traseira)
-    //         Quadro PEQUENO = Selfie (frontal)
+    // CÂMERA CORRIGIDA - Duas câmeras DIFERENTES
     // ============================================================
     
-    let backStream = null;   // Câmera TRASEIRA (ambiente) - vídeo GRANDE
-    let frontStream = null;  // Câmera FRONTAL (selfie) - vídeo PEQUENO (PiP)
+    let ambienteStream = null;    // Câmera TRASEIRA (ambiente) - vídeo GRANDE
+    let selfieStream = null;      // Câmera FRONTAL (selfie) - vídeo PEQUENO
     let mediaRecorder = null;
     let recordedChunks = [];
     let isRecording = false;
@@ -303,28 +294,43 @@
     let recordingTimer = null;
     let animationFrame = null;
     let flashActive = false;
-    let flashInterval = null;
     
     async function iniciarCameraDupla() {
         try {
-            // Câmera TRASEIRA (ambiente) - VÍDEO GRANDE
-            const backConstraints = { video: { facingMode: 'environment' }, audio: true };
-            backStream = await navigator.mediaDevices.getUserMedia(backConstraints);
+            // Câmera TRASEIRA (AMBIENTE) - VÍDEO GRANDE
+            const ambienteConstraints = { 
+                video: { facingMode: { exact: "environment" } }, 
+                audio: true 
+            };
+            ambienteStream = await navigator.mediaDevices.getUserMedia(ambienteConstraints);
             
-            // Câmera FRONTAL (selfie) - VÍDEO PEQUENO (PiP)
-            const frontConstraints = { video: { facingMode: 'user' }, audio: false };
-            frontStream = await navigator.mediaDevices.getUserMedia(frontConstraints);
+            // Câmera FRONTAL (SELFIE) - VÍDEO PEQUENO (PiP)
+            const selfieConstraints = { 
+                video: { facingMode: { exact: "user" } }, 
+                audio: false 
+            };
+            selfieStream = await navigator.mediaDevices.getUserMedia(selfieConstraints);
             
             abrirInterfaceCamera();
         } catch(err) {
-            alert('Erro ao acessar câmeras: ' + err.message);
+            // Fallback se não conseguir acessar as câmeras específicas
+            try {
+                const ambienteConstraints = { video: { facingMode: "environment" }, audio: true };
+                ambienteStream = await navigator.mediaDevices.getUserMedia(ambienteConstraints);
+                
+                const selfieConstraints = { video: { facingMode: "user" }, audio: false };
+                selfieStream = await navigator.mediaDevices.getUserMedia(selfieConstraints);
+                
+                abrirInterfaceCamera();
+            } catch(err2) {
+                alert('Erro ao acessar as câmeras: ' + err2.message + '\n\nVerifique se seu celular tem duas câmeras e deu permissão.');
+            }
         }
     }
     
     function ligarFlash() {
         flashActive = !flashActive;
         const flashBtn = document.getElementById('btnFlash');
-        const mainVideo = document.getElementById('mainVideo');
         
         if (flashActive) {
             flashBtn.classList.add('flash-on');
@@ -343,25 +349,23 @@
                 overlay.style.opacity = '0';
                 document.body.appendChild(overlay);
             }
-            // Piscar o flash periodicamente (simula luz contínua)
-            flashInterval = setInterval(() => {
-                const overlay = document.getElementById('flashOverlay');
-                if (overlay && flashActive) {
-                    overlay.style.transition = 'opacity 0.1s';
-                    overlay.style.opacity = '0.3';
-                    setTimeout(() => {
-                        if (overlay) overlay.style.opacity = '0';
-                    }, 100);
-                }
-            }, 500);
         } else {
             flashBtn.classList.remove('flash-on');
-            if (flashInterval) {
-                clearInterval(flashInterval);
-                flashInterval = null;
-            }
             const overlay = document.getElementById('flashOverlay');
             if (overlay) overlay.style.opacity = '0';
+        }
+    }
+    
+    function piscarFlash() {
+        if (flashActive) {
+            const overlay = document.getElementById('flashOverlay');
+            if (overlay) {
+                overlay.style.transition = 'opacity 0.05s';
+                overlay.style.opacity = '0.8';
+                setTimeout(() => {
+                    if (overlay) overlay.style.opacity = '0';
+                }, 100);
+            }
         }
     }
     
@@ -369,12 +373,12 @@
         const cameraHtml = `
             <div class="camera-container" id="cameraContainer">
                 <div class="camera-main">
-                    <video id="mainVideo" autoplay playsinline muted></video>
+                    <video id="ambienteVideo" autoplay playsinline muted></video>
                     <div class="camera-pip" id="pipVideoContainer">
-                        <video id="pipVideo" autoplay playsinline muted></video>
+                        <video id="selfieVideo" autoplay playsinline muted></video>
                     </div>
                     <div class="label-cameras">
-                        🎥 Câmera Ambiente (Traseira) | 👤 Selfie
+                        🎥 AMBIENTE (Câmera Traseira) | 👤 SELFIE (Câmera Frontal)
                     </div>
                     <div id="recordingTimer" class="timer" style="display: none;">00:00</div>
                 </div>
@@ -389,23 +393,14 @@
         
         document.body.insertAdjacentHTML('beforeend', cameraHtml);
         
-        const mainVideo = document.getElementById('mainVideo');  // Ambiente (traseira) - GRANDE
-        const pipVideo = document.getElementById('pipVideo');     // Selfie (frontal) - PEQUENO
+        const ambienteVideo = document.getElementById('ambienteVideo');  // Traseira - GRANDE
+        const selfieVideo = document.getElementById('selfieVideo');       // Frontal - PEQUENO
         
-        mainVideo.srcObject = backStream;
-        pipVideo.srcObject = frontStream;
+        ambienteVideo.srcObject = ambienteStream;
+        selfieVideo.srcObject = selfieStream;
         
         document.getElementById('btnFoto').onclick = () => {
-            if (flashActive) {
-                const overlay = document.getElementById('flashOverlay');
-                if (overlay) {
-                    overlay.style.transition = 'opacity 0.05s';
-                    overlay.style.opacity = '0.8';
-                    setTimeout(() => {
-                        if (overlay) overlay.style.opacity = '0';
-                    }, 100);
-                }
-            }
+            piscarFlash();
             tirarFotoDupla();
         };
         
@@ -460,27 +455,27 @@
     }
     
     function tirarFotoDupla() {
-        const mainVideo = document.getElementById('mainVideo');  // Ambiente
-        const pipVideo = document.getElementById('pipVideo');     // Selfie
+        const ambienteVideo = document.getElementById('ambienteVideo');
+        const selfieVideo = document.getElementById('selfieVideo');
         
-        if (!mainVideo || !pipVideo) return;
+        if (!ambienteVideo || !selfieVideo) return;
         
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        canvas.width = mainVideo.videoWidth;
-        canvas.height = mainVideo.videoHeight;
+        canvas.width = ambienteVideo.videoWidth;
+        canvas.height = ambienteVideo.videoHeight;
         
-        // Desenhar vídeo principal (AMBIENTE - traseira)
-        ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
+        // Desenhar vídeo AMBIENTE (traseira) - GRANDE
+        ctx.drawImage(ambienteVideo, 0, 0, canvas.width, canvas.height);
         
-        // Desenhar PiP (SELFIE - frontal)
+        // Desenhar SELFIE (frontal) - PEQUENO
         const pipWidth = canvas.width * 0.25;
-        const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
+        const pipHeight = (selfieVideo.videoHeight / selfieVideo.videoWidth) * pipWidth;
         const pipX = canvas.width - pipWidth - 20;
         const pipY = canvas.height - pipHeight - 20;
         
-        ctx.drawImage(pipVideo, pipX, pipY, pipWidth, pipHeight);
+        ctx.drawImage(selfieVideo, pipX, pipY, pipWidth, pipHeight);
         
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 3;
@@ -505,26 +500,26 @@
     }
     
     async function iniciarGravacaoDupla() {
-        const mainVideo = document.getElementById('mainVideo');
-        const pipVideo = document.getElementById('pipVideo');
+        const ambienteVideo = document.getElementById('ambienteVideo');
+        const selfieVideo = document.getElementById('selfieVideo');
         
         const canvas = document.createElement('canvas');
-        canvas.width = mainVideo.videoWidth;
-        canvas.height = mainVideo.videoHeight;
+        canvas.width = ambienteVideo.videoWidth;
+        canvas.height = ambienteVideo.videoHeight;
         const ctx = canvas.getContext('2d');
         
         function desenharFrame() {
             if (!isRecording) return;
-            // Desenhar ambiente (traseira)
-            ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
+            // Desenhar AMBIENTE (traseira)
+            ctx.drawImage(ambienteVideo, 0, 0, canvas.width, canvas.height);
             
-            // Desenhar selfie (frontal) no PiP
+            // Desenhar SELFIE (frontal) no PiP
             const pipWidth = canvas.width * 0.25;
-            const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
+            const pipHeight = (selfieVideo.videoHeight / selfieVideo.videoWidth) * pipWidth;
             const pipX = canvas.width - pipWidth - 20;
             const pipY = canvas.height - pipHeight - 20;
             
-            ctx.drawImage(pipVideo, pipX, pipY, pipWidth, pipHeight);
+            ctx.drawImage(selfieVideo, pipX, pipY, pipWidth, pipHeight);
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 3;
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
@@ -537,12 +532,6 @@
             ctx.fillText('📷 AMBIENTE', 10, 30);
             ctx.fillText('👤 SELFIE', pipX + 10, pipY + 20);
             ctx.shadowBlur = 0;
-            
-            if (flashActive) {
-                // Efeito de flash suave durante gravação
-                ctx.fillStyle = 'rgba(255,255,200,0.1)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
             
             animationFrame = requestAnimationFrame(desenharFrame);
         }
@@ -604,16 +593,11 @@
             if (animationFrame) cancelAnimationFrame(animationFrame);
         }
         
-        if (flashInterval) {
-            clearInterval(flashInterval);
-            flashInterval = null;
-        }
-        
         const overlay = document.getElementById('flashOverlay');
         if (overlay) overlay.remove();
         
-        if (backStream) backStream.getTracks().forEach(t => t.stop());
-        if (frontStream) frontStream.getTracks().forEach(t => t.stop());
+        if (ambienteStream) ambienteStream.getTracks().forEach(t => t.stop());
+        if (selfieStream) selfieStream.getTracks().forEach(t => t.stop());
         
         document.getElementById('cameraContainer')?.remove();
     }
@@ -660,10 +644,6 @@
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
-    
-    // ============================================================
-    // AVATAR
-    // ============================================================
     
     async function abrirModalAvatar() {
         const input = document.createElement('input');
@@ -933,9 +913,9 @@
         carregarSessao();
         renderizarApp();
         console.log('🚀 App iniciado!');
-        console.log('📱 Quadro GRANDE = Câmera Ambiente (Traseira)');
-        console.log('👤 Quadro PEQUENO = Selfie (Frontal)');
-        console.log('💡 Botão de FLASH disponível');
+        console.log('📷 Câmera TRASEIRA = Ambiente (vídeo GRANDE)');
+        console.log('👤 Câmera FRONTAL = Selfie (vídeo PEQUENO)');
+        console.log('✅ Duas câmeras DIFERENTES!');
     }
     
     iniciar();
