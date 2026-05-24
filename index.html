@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Família Connect - Câmera Dupla Final</title>
+    <title>Família Connect - LPX</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
@@ -93,7 +93,7 @@
 
 <script>
     // ============================================================
-    // BANCO DE DADOS
+    // BANCO DE DADOS - SEM IMAGENS FICTÍCIAS
     // ============================================================
     
     let USUARIO_ATUAL = null;
@@ -101,9 +101,9 @@
     let AVATARES = {};
     let ABA_ATUAL = 'feed';
     
-    const CHAVE_POSTS = 'familia_connect_posts';
-    const CHAVE_SESSAO = 'familia_connect_sessao';
-    const CHAVE_AVATARES = 'familia_connect_avatares';
+    const CHAVE_POSTS = 'familia_connect_posts_v2';
+    const CHAVE_SESSAO = 'familia_connect_sessao_v2';
+    const CHAVE_AVATARES = 'familia_connect_avatares_v2';
     
     function carregarAvatares() {
         const salvos = localStorage.getItem(CHAVE_AVATARES);
@@ -130,15 +130,20 @@
         if (salvos) {
             try {
                 POSTS = JSON.parse(salvos);
-            } catch(e) {}
-        }
-        if (!POSTS || POSTS.length === 0) {
+                console.log('Posts carregados:', POSTS.length);
+            } catch(e) {
+                POSTS = [];
+            }
+        } else {
+            // NADA de posts fictícios - começa vazio
             POSTS = [];
+            console.log('Nenhum post salvo. Começando vazio.');
         }
     }
     
     function salvarPosts() {
         localStorage.setItem(CHAVE_POSTS, JSON.stringify(POSTS));
+        console.log('Posts salvos:', POSTS.length);
     }
     
     function salvarSessao(usuario, manter) {
@@ -190,13 +195,7 @@
         };
         POSTS.unshift(novoPost);
         salvarPosts();
-        
-        // Se estiver no feed, atualiza
-        if (ABA_ATUAL === 'feed') {
-            renderizarConteudo();
-        } else {
-            renderizarConteudo();
-        }
+        renderizarConteudo();
         return true;
     }
     
@@ -246,11 +245,11 @@
     }
     
     // ============================================================
-    // CÂMERA DUPLA (Frontal + Traseira)
+    // CÂMERA DUPLA REAL (Frontal + Traseira)
     // ============================================================
     
-    let frontStream = null;  // Câmera frontal
-    let backStream = null;   // Câmera traseira
+    let frontStream = null;
+    let backStream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
     let isRecording = false;
@@ -260,11 +259,11 @@
     
     async function iniciarCameraDupla() {
         try {
-            // Câmera FRONTAL (selfie) - será a principal
+            // Câmera FRONTAL (selfie/LPX)
             const frontConstraints = { video: { facingMode: 'user' }, audio: true };
             frontStream = await navigator.mediaDevices.getUserMedia(frontConstraints);
             
-            // Câmera TRASEIRA - será o Picture-in-Picture
+            // Câmera TRASEIRA
             const backConstraints = { video: { facingMode: 'environment' }, audio: false };
             backStream = await navigator.mediaDevices.getUserMedia(backConstraints);
             
@@ -298,16 +297,13 @@
         const mainVideo = document.getElementById('mainVideo');
         const pipVideo = document.getElementById('pipVideo');
         
-        // Frontal no main, Traseira no PiP
         mainVideo.srcObject = frontStream;
         pipVideo.srcObject = backStream;
         
-        // Botão foto
         document.getElementById('btnFoto').onclick = () => {
-            tirarFotoComDuasCameras();
+            tirarFotoDupla();
         };
         
-        // Botão vídeo
         document.getElementById('btnVideo').onclick = () => {
             if (isRecording) {
                 pararGravacaoDupla();
@@ -316,7 +312,6 @@
             }
         };
         
-        // Fechar
         document.getElementById('btnFechar').onclick = () => {
             fecharCamera();
         };
@@ -355,7 +350,7 @@
         });
     }
     
-    function tirarFotoComDuasCameras() {
+    function tirarFotoDupla() {
         const mainVideo = document.getElementById('mainVideo');
         const pipVideo = document.getElementById('pipVideo');
         
@@ -364,14 +359,13 @@
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Tamanho baseado no vídeo principal
         canvas.width = mainVideo.videoWidth;
         canvas.height = mainVideo.videoHeight;
         
-        // Desenhar vídeo principal (frontal)
+        // Desenhar vídeo principal (LPX)
         ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
         
-        // Desenhar PiP (traseira) no canto inferior direito
+        // Desenhar PiP (ambiente)
         const pipWidth = canvas.width * 0.25;
         const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
         const pipX = canvas.width - pipWidth - 20;
@@ -379,25 +373,24 @@
         
         ctx.drawImage(pipVideo, pipX, pipY, pipWidth, pipHeight);
         
-        // Borda branca no PiP
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 3;
         ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
         
-        // Texto indicando as câmeras
+        // Texto "LPX" no lugar de selfie
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 16px Arial';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
-        ctx.fillText('📱 Selfie', 10, 30);
+        ctx.fillText('🎥 LPX', 15, 40);
         ctx.fillText('📷 Ambiente', pipX + 10, pipY + 25);
         ctx.shadowBlur = 0;
         
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         
-        const legenda = prompt('Digite uma legenda para a foto:', '📸 Foto com câmera dupla! (Selfie + Ambiente)');
+        const legenda = prompt('Digite uma legenda:', '📸 Foto com LPX');
         adicionarPost('foto', dataUrl, legenda);
-        alert('✅ Foto publicada no Feed!');
+        alert('✅ Foto salva no Feed!');
         
         fecharCamera();
     }
@@ -406,21 +399,15 @@
         const mainVideo = document.getElementById('mainVideo');
         const pipVideo = document.getElementById('pipVideo');
         
-        if (!mainVideo || !pipVideo) return;
-        
-        // Criar canvas para combinar as duas streams
         const canvas = document.createElement('canvas');
         canvas.width = mainVideo.videoWidth;
         canvas.height = mainVideo.videoHeight;
         const ctx = canvas.getContext('2d');
         
-        // Função para desenhar frame combinado
         function desenharFrame() {
             if (!isRecording) return;
-            // Desenhar vídeo principal (frontal)
             ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
             
-            // Desenhar PiP (traseira)
             const pipWidth = canvas.width * 0.25;
             const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
             const pipX = canvas.width - pipWidth - 20;
@@ -431,12 +418,11 @@
             ctx.lineWidth = 3;
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
             
-            // Texto
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 12px Arial';
+            ctx.font = 'bold 14px Arial';
             ctx.shadowColor = 'black';
             ctx.shadowBlur = 3;
-            ctx.fillText('📱 Selfie', 10, 25);
+            ctx.fillText('🎥 LPX', 10, 30);
             ctx.fillText('📷 Ambiente', pipX + 10, pipY + 20);
             ctx.shadowBlur = 0;
             
@@ -455,9 +441,9 @@
         mediaRecorder.onstop = () => {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
-            const legenda = prompt('Digite uma legenda para o vídeo:', '🎥 Vídeo com câmera dupla! (Selfie + Ambiente)');
+            const legenda = prompt('Digite uma legenda:', '🎥 Vídeo com LPX');
             adicionarPost('video', url, legenda);
-            alert('✅ Vídeo publicado no Feed!');
+            alert('✅ Vídeo salvo no Feed!');
             
             if (animationFrame) cancelAnimationFrame(animationFrame);
             fecharCamera();
@@ -466,7 +452,6 @@
         mediaRecorder.start();
         isRecording = true;
         
-        // Iniciar timer
         recordingSeconds = 0;
         const timerDiv = document.getElementById('recordingTimer');
         timerDiv.style.display = 'block';
@@ -477,10 +462,8 @@
             timerDiv.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }, 1000);
         
-        // Iniciar desenho
         desenharFrame();
         
-        // Mudar estilo do botão
         const btnVideo = document.getElementById('btnVideo');
         btnVideo.textContent = '⏹️';
         btnVideo.classList.add('recording');
@@ -540,7 +523,7 @@
                 <div class="modal-content">
                     <h3 style="margin-bottom: 20px;">📤 Nova Publicação</h3>
                     <button class="option-btn primary" onclick="iniciarCameraDupla(); fecharModal()">
-                        🎥 Câmera Dupla (Selfie + Ambiente)
+                        🎥 Câmera Dupla (LPX + Ambiente)
                     </button>
                     <button class="option-btn secondary" onclick="importarGaleria(); fecharModal()">
                         📁 Importar da Galeria
@@ -599,7 +582,6 @@
         return POSTS.filter(post => post.usuarioId === USUARIO_ATUAL.id);
     }
     
-    // FEED: Apenas visualizar, curtir e comentar (SEM EXCLUIR)
     function renderizarFeed() {
         if (POSTS.length === 0) {
             return '<div class="empty">📭 Nenhum post ainda. Clique no + para começar!</div>';
@@ -641,7 +623,6 @@
         `).join('');
     }
     
-    // PERFIL: Pode ver, postar e EXCLUIR seus próprios posts
     function renderizarPerfil() {
         const meusPosts = getMeusPosts();
         const totalCurtidas = meusPosts.reduce((sum, post) => sum + post.curtidas.length, 0);
@@ -664,7 +645,7 @@
             </div>
             <div style="padding: 15px;">
                 <h3>📸 Minhas Publicações</h3>
-                <p style="font-size: 12px; color: #999;">Aqui você pode gerenciar seus posts (excluir os seus)</p>
+                <p style="font-size: 12px; color: #999;">Aqui você pode gerenciar seus posts</p>
             </div>
             ${meusPosts.length === 0 ? '<div class="empty">📭 Você ainda não tem posts. Clique no + para começar!</div>' : meusPosts.map(post => `
                 <div class="post">
@@ -686,14 +667,6 @@
                         <button class="acao ${post.curtidas.includes(USUARIO_ATUAL.id) ? 'liked' : ''}" onclick="curtirPost(${post.id})">
                             ❤️ ${post.curtidas.length}
                         </button>
-                        <button class="acao" onclick="document.getElementById('comentario_perfil_${post.id}').focus()">
-                            💬 ${post.comentarios.length}
-                        </button>
-                    </div>
-                    <div class="comentarios">
-                        ${post.comentarios.slice(-2).map(c => `
-                            <div class="comentario"><strong>${c.usuarioNome}:</strong> ${c.texto}</div>
-                        `).join('')}
                     </div>
                     <div class="add-comentario">
                         <input type="text" id="comentario_perfil_${post.id}" placeholder="Comentário...">
@@ -847,9 +820,10 @@
     renderizarApp();
     
     console.log('🚀 App iniciado!');
-    console.log('📱 Câmera frontal + traseira funcionando');
-    console.log('📸 Feed: apenas visualizar, curtir e comentar');
-    console.log('👤 Perfil: gerenciar seus próprios posts');
+    console.log('📱 Câmera frontal + traseira REAL');
+    console.log('💾 Posts salvos permanentemente');
+    console.log('🎥 Texto "LPX" no lugar de selfie');
+    console.log('❌ Sem imagens fictícias');
 </script>
 </body>
 </html>
