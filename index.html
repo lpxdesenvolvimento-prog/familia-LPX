@@ -307,10 +307,16 @@
             position: relative;
         }
 
-        .post-media img, .post-media video {
+        .post-media img {
             width: 100%;
             max-height: 500px;
             object-fit: cover;
+        }
+
+        .post-media video {
+            width: 100%;
+            max-height: 500px;
+            background: #000;
         }
 
         .live-badge-post {
@@ -660,7 +666,6 @@
             recordedChunks: []
         };
 
-        // Lista de emojis para chuva
         const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
 
         function criarChuvaEmojis() {
@@ -691,9 +696,16 @@
         function loadData() {
             const savedPosts = localStorage.getItem('familia_pro_data');
             if (savedPosts) {
-                state.posts = JSON.parse(savedPosts);
-                console.log('Posts carregados:', state.posts.length);
-            } else {
+                try {
+                    state.posts = JSON.parse(savedPosts);
+                    console.log('Posts carregados:', state.posts.length);
+                } catch(e) {
+                    console.error('Erro ao carregar posts:', e);
+                    state.posts = [];
+                }
+            }
+            
+            if (!state.posts || state.posts.length === 0) {
                 state.posts = [
                     {
                         id: '1',
@@ -723,16 +735,20 @@
             
             const savedAvatars = localStorage.getItem('familia_avatars');
             if (savedAvatars) {
-                const avatars = JSON.parse(savedAvatars);
-                if (avatars.pai) USUARIOS.pai.avatarImg = avatars.pai;
-                if (avatars.mae) USUARIOS.mae.avatarImg = avatars.mae;
+                try {
+                    const avatars = JSON.parse(savedAvatars);
+                    if (avatars.pai) USUARIOS.pai.avatarImg = avatars.pai;
+                    if (avatars.mae) USUARIOS.mae.avatarImg = avatars.mae;
+                } catch(e) {}
             }
             
             const savedPasswords = localStorage.getItem('familia_passwords');
             if (savedPasswords) {
-                const passwords = JSON.parse(savedPasswords);
-                if (passwords.pai) USUARIOS.pai.senha = passwords.pai;
-                if (passwords.mae) USUARIOS.mae.senha = passwords.mae;
+                try {
+                    const passwords = JSON.parse(savedPasswords);
+                    if (passwords.pai) USUARIOS.pai.senha = passwords.pai;
+                    if (passwords.mae) USUARIOS.mae.senha = passwords.mae;
+                } catch(e) {}
             }
         }
 
@@ -756,14 +772,14 @@
 
         // ==================== FUNÇÕES DO FEED ====================
         
-        function adicionarPost(tipo, fileData, legenda, isLiveRecording = false, liveInfo = null) {
+        function adicionarPost(tipo, dataUrl, legenda, isLiveRecording = false, liveInfo = null) {
             const novoPost = {
                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
                 usuarioId: state.currentUser.id,
                 usuarioNome: state.currentUser.nome,
                 tipo: tipo,
-                url: fileData,
-                legenda: legenda,
+                url: dataUrl,
+                legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
                 data: new Date().toISOString(),
                 curtidas: [],
                 comentarios: []
@@ -773,7 +789,6 @@
                 novoPost.isLiveRecording = true;
                 novoPost.liveMessages = liveInfo.messages;
                 novoPost.liveLikes = liveInfo.likes;
-                novoPost.legenda = (legenda || 'Live gravada 🔴') + ` - ${liveInfo.messages.length} comentários, ${liveInfo.likes} curtidas`;
             }
             
             state.posts.unshift(novoPost);
@@ -799,7 +814,7 @@
                 
                 reader.onload = function(e) {
                     try {
-                        adicionarPost(tipo, e.target.result, legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'));
+                        adicionarPost(tipo, e.target.result, legenda);
                         resolve(true);
                     } catch(err) {
                         reject('Erro ao processar o arquivo: ' + err.message);
@@ -818,7 +833,7 @@
             let sucessos = 0;
             let erros = 0;
             
-            for (let i = 0; i < files.length; i++) {
+            for (let i = 0; i < Math.min(files.length, 20); i++) { // Limite de 20 arquivos
                 const file = files[i];
                 if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
                     try {
@@ -878,7 +893,7 @@
             }
         }
 
-        // ==================== LIVE COM GRAVAÇÃO ====================
+        // ==================== LIVE ====================
         async function iniciarLive() {
             state.liveActive = true;
             state.liveMessages = [];
@@ -897,15 +912,13 @@
                     videoElement.play();
                 }
                 
-                // Iniciar gravação
-                state.mediaRecorder = new MediaRecorder(stream);
+                state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
                 state.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         state.recordedChunks.push(event.data);
                     }
                 };
                 state.mediaRecorder.start(1000);
-                
                 state.liveStream = stream;
                 
             } catch (err) {
@@ -940,10 +953,8 @@
                         videoElement.play();
                     }
                     state.liveStream = stream;
-                    
-                    // Reiniciar gravação
                     state.recordedChunks = [];
-                    state.mediaRecorder = new MediaRecorder(stream);
+                    state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
                     state.mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             state.recordedChunks.push(event.data);
@@ -990,7 +1001,7 @@
 
         function salvarLiveNoFeed() {
             if (state.recordedChunks.length === 0) {
-                alert('Nenhum vídeo gravado. Aguarde alguns segundos e tente novamente.');
+                alert('Aguardando gravação... Aguarde alguns segundos e tente novamente.');
                 return;
             }
             
@@ -1004,7 +1015,7 @@
             
             adicionarPost('video', videoUrl, 'Live gravada 🔴', true, liveInfo);
             
-            alert('✅ Live salva no feed com o vídeo, comentários e curtidas!');
+            alert('✅ Live salva no feed!');
             encerrarLive();
             state.activeTab = 'feed';
             renderizarApp();
@@ -1334,7 +1345,7 @@
                             ${post.tipo === 'foto' 
                                 ? `<img src="${post.url}" alt="Foto" loading="lazy" onerror="this.src='https://picsum.photos/400/400?error=1'">`
                                 : post.tipo === 'video'
-                                    ? `<video src="${post.url}" controls preload="metadata" style="width:100%"></video>`
+                                    ? `<video src="${post.url}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
                                     : `<div style="padding: 50px; text-align: center; background: #f0f0f0;">Mídia não suportada</div>`
                             }
                             ${isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
