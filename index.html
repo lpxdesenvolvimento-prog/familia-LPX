@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Família Connect - Final</title>
+    <title>Família Connect - Meu Perfil</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
@@ -18,9 +18,24 @@
         .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; margin: 15px 0; font-size: 16px; }
         .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
         
-        /* Feed */
-        .header { background: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; position: sticky; top: 0; }
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* Navegação */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 20px; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { text-align: center; cursor: pointer; padding: 5px; flex: 1; }
+        .nav-item.active { color: #667eea; transform: translateY(-3px); }
+        .nav-icon { font-size: 24px; }
+        .nav-label { font-size: 12px; margin-top: 4px; }
+        
+        .header { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 99; }
+        .fab { position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 200; }
+        
+        /* Perfil Header */
+        .profile-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; color: white; }
+        .profile-avatar { font-size: 80px; background: white; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .profile-name { font-size: 24px; margin-bottom: 5px; }
+        .profile-stats { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+        .stat { text-align: center; }
+        .stat-number { font-size: 22px; font-weight: bold; }
+        .stat-label { font-size: 12px; opacity: 0.9; }
         
         .post { background: white; margin-bottom: 10px; border-bottom: 1px solid #eee; }
         .post-header { display: flex; padding: 12px; gap: 10px; align-items: center; }
@@ -38,7 +53,10 @@
         .add-comentario input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 20px; }
         .add-comentario button { background: #667eea; color: white; border: none; border-radius: 20px; padding: 8px 15px; cursor: pointer; }
         
-        .loading { text-align: center; padding: 50px; color: #999; }
+        .loading, .empty { text-align: center; padding: 50px; color: #999; }
+        .grid-fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+        .grid-item { aspect-ratio: 1; overflow: hidden; }
+        .grid-item img, .grid-item video { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -51,6 +69,7 @@
     
     let USUARIO_ATUAL = null;
     let POSTS = [];
+    let ABA_ATUAL = 'feed'; // 'feed' ou 'perfil'
     
     const CHAVE_POSTS = 'familia_connect_posts';
     const CHAVE_SESSAO = 'familia_connect_sessao';
@@ -152,7 +171,7 @@
         };
         POSTS.unshift(novoPost);
         salvarPosts();
-        renderizarFeed();
+        renderizarConteudo();
         return true;
     }
     
@@ -166,7 +185,7 @@
                 post.curtidas.splice(index, 1);
             }
             salvarPosts();
-            renderizarFeed();
+            renderizarConteudo();
         }
     }
     
@@ -186,7 +205,7 @@
             });
             salvarPosts();
             input.value = '';
-            renderizarFeed();
+            renderizarConteudo();
         }
     }
     
@@ -196,7 +215,7 @@
             if (confirm('Tem certeza que quer excluir este post?')) {
                 POSTS = POSTS.filter(p => p.id !== id);
                 salvarPosts();
-                renderizarFeed();
+                renderizarConteudo();
             }
         }
     }
@@ -235,16 +254,16 @@
         return data.toLocaleDateString('pt-BR');
     }
     
+    function getMeusPosts() {
+        return POSTS.filter(post => post.usuarioId === USUARIO_ATUAL.id);
+    }
+    
     function renderizarFeed() {
-        const container = document.getElementById('feedContainer');
-        if (!container) return;
-        
-        if (!POSTS || POSTS.length === 0) {
-            container.innerHTML = '<div class="loading">📭 Nenhum post ainda. Clique no + para começar!</div>';
-            return;
+        if (POSTS.length === 0) {
+            return '<div class="empty">📭 Nenhum post ainda. Clique no + para começar!</div>';
         }
         
-        container.innerHTML = POSTS.map(post => `
+        return POSTS.map(post => `
             <div class="post">
                 <div class="post-header">
                     <div class="avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
@@ -281,6 +300,98 @@
         `).join('');
     }
     
+    function renderizarPerfil() {
+        const meusPosts = getMeusPosts();
+        const totalCurtidas = meusPosts.reduce((sum, post) => sum + post.curtidas.length, 0);
+        
+        // Modo lista de posts (padrão)
+        if (meusPosts.length === 0) {
+            return `
+                <div class="profile-header">
+                    <div class="profile-avatar">${USUARIO_ATUAL.id === 'pai' ? '👨' : '👩'}</div>
+                    <div class="profile-name">${USUARIO_ATUAL.nome}</div>
+                    <div class="profile-stats">
+                        <div class="stat"><div class="stat-number">0</div><div class="stat-label">Posts</div></div>
+                        <div class="stat"><div class="stat-number">0</div><div class="stat-label">Curtidas</div></div>
+                    </div>
+                </div>
+                <div class="empty">📭 Você ainda não tem posts. Clique no + para começar!</div>
+            `;
+        }
+        
+        return `
+            <div class="profile-header">
+                <div class="profile-avatar">${USUARIO_ATUAL.id === 'pai' ? '👨' : '👩'}</div>
+                <div class="profile-name">${USUARIO_ATUAL.nome}</div>
+                <div class="profile-stats">
+                    <div class="stat"><div class="stat-number">${meusPosts.length}</div><div class="stat-label">Posts</div></div>
+                    <div class="stat"><div class="stat-number">${totalCurtidas}</div><div class="stat-label">Curtidas</div></div>
+                </div>
+            </div>
+            <div style="padding: 15px;">
+                <h3 style="margin-bottom: 15px;">📸 Minhas Publicações</h3>
+            </div>
+            ${meusPosts.map(post => `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
+                        <div style="flex:1">
+                            <div class="post-nome">${post.usuarioNome}</div>
+                            <div class="post-data">${formatarData(post.data)}</div>
+                        </div>
+                        <button onclick="excluirPost(${post.id})" style="background:none; border:none; font-size:20px; cursor:pointer;">🗑️</button>
+                    </div>
+                    <div class="post-media">
+                        ${post.tipo === 'foto' 
+                            ? `<img src="${post.midia}" loading="lazy" onerror="this.src='https://picsum.photos/400/400'">`
+                            : `<video src="${post.midia}" controls></video>`}
+                    </div>
+                    ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
+                    <div class="post-acoes">
+                        <button class="acao ${post.curtidas.includes(USUARIO_ATUAL.id) ? 'liked' : ''}" onclick="curtirPost(${post.id})">
+                            ❤️ ${post.curtidas.length}
+                        </button>
+                        <button class="acao" onclick="document.getElementById('comentario_${post.id}').focus()">
+                            💬 ${post.comentarios.length}
+                        </button>
+                    </div>
+                    <div class="comentarios">
+                        ${post.comentarios.slice(-2).map(c => `
+                            <div class="comentario"><strong>${c.usuarioNome}:</strong> ${c.texto}</div>
+                        `).join('')}
+                    </div>
+                    <div class="add-comentario">
+                        <input type="text" id="comentario_${post.id}" placeholder="Escreva um comentário...">
+                        <button onclick="comentarPost(${post.id})">Enviar</button>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+    }
+    
+    function renderizarConteudo() {
+        const container = document.getElementById('mainContainer');
+        if (!container) return;
+        
+        if (ABA_ATUAL === 'feed') {
+            container.innerHTML = renderizarFeed();
+        } else {
+            container.innerHTML = renderizarPerfil();
+        }
+    }
+    
+    function mudarAba(aba) {
+        ABA_ATUAL = aba;
+        document.querySelectorAll('.nav-item').forEach(el => {
+            if (el.dataset.tab === aba) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+        renderizarConteudo();
+    }
+    
     function fazerLogin() {
         const perfilSelecionado = document.getElementById('perfilSelecionado')?.value || 'pai';
         const senha = document.getElementById('senhaLogin')?.value || '';
@@ -304,6 +415,14 @@
         USUARIO_ATUAL = null;
         limparSessao();
         renderizarApp();
+    }
+    
+    function selecionarPerfil(perfil) {
+        document.getElementById('perfilSelecionado').value = perfil;
+        document.querySelectorAll('[data-perfil]').forEach(el => {
+            el.classList.remove('selected');
+        });
+        document.querySelector(`[data-perfil="${perfil}"]`)?.classList.add('selected');
     }
     
     function renderizarApp() {
@@ -330,13 +449,11 @@
                     </div>
                 </div>
             `;
-            
-            // Marcar perfil padrão
             document.querySelector('[data-perfil="pai"]')?.classList.add('selected');
             return;
         }
         
-        // Tela principal
+        // Tela principal com navegação
         appDiv.innerHTML = `
             <div class="header">
                 <h2 style="color:#667eea;">📱 Família Connect</h2>
@@ -345,19 +462,21 @@
                     <button onclick="sair()" style="background:none; border:none; font-size:20px; cursor:pointer;">🚪</button>
                 </div>
             </div>
-            <div id="feedContainer" style="padding-bottom: 80px;"></div>
+            <div id="mainContainer" style="padding-bottom: 80px;"></div>
             <button class="fab" onclick="abrirUpload()">+</button>
+            <div class="bottom-nav">
+                <div class="nav-item ${ABA_ATUAL === 'feed' ? 'active' : ''}" data-tab="feed" onclick="mudarAba('feed')">
+                    <div class="nav-icon">📱</div>
+                    <div class="nav-label">Feed</div>
+                </div>
+                <div class="nav-item ${ABA_ATUAL === 'perfil' ? 'active' : ''}" data-tab="perfil" onclick="mudarAba('perfil')">
+                    <div class="nav-icon">👤</div>
+                    <div class="nav-label">Meu Perfil</div>
+                </div>
+            </div>
         `;
         
-        renderizarFeed();
-    }
-    
-    function selecionarPerfil(perfil) {
-        document.getElementById('perfilSelecionado').value = perfil;
-        document.querySelectorAll('[data-perfil]').forEach(el => {
-            el.classList.remove('selected');
-        });
-        document.querySelector(`[data-perfil="${perfil}"]`)?.classList.add('selected');
+        renderizarConteudo();
     }
     
     // ============================================================
@@ -371,6 +490,7 @@
     window.comentarPost = comentarPost;
     window.excluirPost = excluirPost;
     window.sair = sair;
+    window.mudarAba = mudarAba;
     
     // ============================================================
     // INICIAR APP
