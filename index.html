@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Família Connect - LPX Definitivo</title>
+    <title>Família Connect - LPX Camera</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
@@ -71,21 +71,34 @@
         .camera-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 3000; display: flex; flex-direction: column; }
         .camera-main { flex: 1; position: relative; background: #111; }
         .camera-main video { width: 100%; height: 100%; object-fit: cover; }
-        .camera-pip { position: absolute; bottom: 20px; right: 20px; width: 120px; height: 160px; border-radius: 15px; overflow: hidden; border: 2px solid white; background: #000; cursor: move; }
+        .camera-pip { position: absolute; bottom: 20px; right: 20px; width: 120px; height: 160px; border-radius: 15px; overflow: hidden; border: 2px solid white; background: #000; cursor: move; z-index: 10; }
         .camera-pip video { width: 100%; height: 100%; object-fit: cover; }
         .camera-controls { padding: 20px; display: flex; gap: 15px; justify-content: center; background: #1a1a1a; flex-wrap: wrap; }
         .camera-btn { width: 70px; height: 70px; border-radius: 50%; border: none; font-size: 30px; cursor: pointer; }
         .camera-btn.capture { background: #ff0066; color: white; }
         .camera-btn.record { background: #dc3545; color: white; }
         .camera-btn.recording { background: #ffc107; color: #333; animation: pulse 1s infinite; }
-        .camera-btn.swap { background: #17a2b8; color: white; font-size: 24px; }
+        .camera-btn.flash { background: #ffc107; color: #333; }
+        .camera-btn.flash-on { background: #fff; color: #ffc107; box-shadow: 0 0 20px yellow; }
         .camera-btn.close { background: #6c757d; color: white; }
-        .timer { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 20px; font-family: monospace; font-size: 16px; }
+        .timer { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 20px; font-family: monospace; font-size: 16px; z-index: 10; }
         
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+        
+        .label-cameras {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 10;
         }
     </style>
 </head>
@@ -94,7 +107,7 @@
 
 <script>
     // ============================================================
-    // BANCO DE DADOS - IndexedDB (Salvamento PERMANENTE)
+    // BANCO DE DADOS - IndexedDB
     // ============================================================
     
     let USUARIO_ATUAL = null;
@@ -103,22 +116,18 @@
     let ABA_ATUAL = 'feed';
     let db = null;
     
-    // Abrir IndexedDB
     function abrirDB() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('FamiliaConnectDB', 2);
-            
+            const request = indexedDB.open('FamiliaConnectDB', 3);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 db = request.result;
                 resolve(db);
             };
-            
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
                 if (!db.objectStoreNames.contains('posts')) {
-                    const store = db.createObjectStore('posts', { keyPath: 'id' });
-                    store.createIndex('data', 'data');
+                    db.createObjectStore('posts', { keyPath: 'id' });
                 }
                 if (!db.objectStoreNames.contains('avatares')) {
                     db.createObjectStore('avatares', { keyPath: 'usuarioId' });
@@ -133,11 +142,9 @@
             const transaction = db.transaction(['posts'], 'readonly');
             const store = transaction.objectStore('posts');
             const request = store.getAll();
-            
             request.onsuccess = () => {
                 POSTS = request.result || [];
                 POSTS.sort((a, b) => b.id - a.id);
-                console.log('Posts carregados do IndexedDB:', POSTS.length);
                 resolve();
             };
             request.onerror = () => reject(request.error);
@@ -149,15 +156,9 @@
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['posts'], 'readwrite');
             const store = transaction.objectStore('posts');
-            
-            // Limpar e salvar todos
             store.clear();
             POSTS.forEach(post => store.add(post));
-            
-            transaction.oncomplete = () => {
-                console.log('Posts salvos no IndexedDB:', POSTS.length);
-                resolve();
-            };
+            transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         });
     }
@@ -168,7 +169,6 @@
             const transaction = db.transaction(['avatares'], 'readonly');
             const store = transaction.objectStore('avatares');
             const request = store.getAll();
-            
             request.onsuccess = () => {
                 const avatares = request.result || [];
                 AVATARES = {};
@@ -197,21 +197,18 @@
         return usuarioId === 'pai' ? '👨' : '👩';
     }
     
-    // ============================================================
-    // SESSÃO
-    // ============================================================
-    
+    // Sessão
     function salvarSessao(usuario, manter) {
         const sessao = {
             usuarioId: usuario.id,
             usuarioNome: usuario.nome,
             expira: manter ? Date.now() + (30 * 24 * 60 * 60 * 1000) : Date.now() + (24 * 60 * 60 * 1000)
         };
-        localStorage.setItem('familia_sessao_v3', JSON.stringify(sessao));
+        localStorage.setItem('familia_sessao_v4', JSON.stringify(sessao));
     }
     
     function carregarSessao() {
-        const salva = localStorage.getItem('familia_sessao_v3');
+        const salva = localStorage.getItem('familia_sessao_v4');
         if (salva) {
             try {
                 const sessao = JSON.parse(salva);
@@ -229,13 +226,10 @@
     }
     
     function limparSessao() {
-        localStorage.removeItem('familia_sessao_v3');
+        localStorage.removeItem('familia_sessao_v4');
     }
     
-    // ============================================================
     // POSTAGEM
-    // ============================================================
-    
     async function adicionarPost(tipo, midia, legenda) {
         const novoPost = {
             id: Date.now(),
@@ -258,11 +252,8 @@
         const post = POSTS.find(p => p.id === id);
         if (post) {
             const index = post.curtidas.indexOf(USUARIO_ATUAL.id);
-            if (index === -1) {
-                post.curtidas.push(USUARIO_ATUAL.id);
-            } else {
-                post.curtidas.splice(index, 1);
-            }
+            if (index === -1) post.curtidas.push(USUARIO_ATUAL.id);
+            else post.curtidas.splice(index, 1);
             await salvarPostsDB();
             renderizarConteudo();
         }
@@ -273,7 +264,6 @@
         if (!input) return;
         const texto = input.value.trim();
         if (!texto) return;
-        
         const post = POSTS.find(p => p.id === id);
         if (post) {
             post.comentarios.push({
@@ -300,31 +290,30 @@
     }
     
     // ============================================================
-    // CÂMERA DUPLA (Frontal + Traseira com troca)
+    // CÂMERA - Quadro GRANDE = Ambiente (traseira)
+    //         Quadro PEQUENO = Selfie (frontal)
     // ============================================================
     
-    let mainStream = null;
-    let pipStream = null;
+    let backStream = null;   // Câmera TRASEIRA (ambiente) - vídeo GRANDE
+    let frontStream = null;  // Câmera FRONTAL (selfie) - vídeo PEQUENO (PiP)
     let mediaRecorder = null;
     let recordedChunks = [];
     let isRecording = false;
     let recordingSeconds = 0;
     let recordingTimer = null;
     let animationFrame = null;
-    let mainIsFront = true;  // true = frontal, false = traseira
-    let pipIsFront = false;   // true = frontal, false = traseira
+    let flashActive = false;
+    let flashInterval = null;
     
     async function iniciarCameraDupla() {
         try {
-            // Main: frontal, Pip: traseira
-            mainIsFront = true;
-            pipIsFront = false;
+            // Câmera TRASEIRA (ambiente) - VÍDEO GRANDE
+            const backConstraints = { video: { facingMode: 'environment' }, audio: true };
+            backStream = await navigator.mediaDevices.getUserMedia(backConstraints);
             
-            const mainConstraints = { video: { facingMode: 'user' }, audio: true };
-            const pipConstraints = { video: { facingMode: 'environment' }, audio: false };
-            
-            mainStream = await navigator.mediaDevices.getUserMedia(mainConstraints);
-            pipStream = await navigator.mediaDevices.getUserMedia(pipConstraints);
+            // Câmera FRONTAL (selfie) - VÍDEO PEQUENO (PiP)
+            const frontConstraints = { video: { facingMode: 'user' }, audio: false };
+            frontStream = await navigator.mediaDevices.getUserMedia(frontConstraints);
             
             abrirInterfaceCamera();
         } catch(err) {
@@ -332,30 +321,47 @@
         }
     }
     
-    async function trocarCameras() {
-        // Trocar as configurações
-        mainIsFront = !mainIsFront;
-        pipIsFront = !pipIsFront;
+    function ligarFlash() {
+        flashActive = !flashActive;
+        const flashBtn = document.getElementById('btnFlash');
+        const mainVideo = document.getElementById('mainVideo');
         
-        // Parar streams atuais
-        if (mainStream) mainStream.getTracks().forEach(t => t.stop());
-        if (pipStream) pipStream.getTracks().forEach(t => t.stop());
-        
-        try {
-            const mainConstraints = { video: { facingMode: mainIsFront ? 'user' : 'environment' }, audio: true };
-            const pipConstraints = { video: { facingMode: pipIsFront ? 'user' : 'environment' }, audio: false };
-            
-            mainStream = await navigator.mediaDevices.getUserMedia(mainConstraints);
-            pipStream = await navigator.mediaDevices.getUserMedia(pipConstraints);
-            
-            const mainVideo = document.getElementById('mainVideo');
-            const pipVideo = document.getElementById('pipVideo');
-            
-            if (mainVideo) mainVideo.srcObject = mainStream;
-            if (pipVideo) pipVideo.srcObject = pipStream;
-            
-        } catch(err) {
-            alert('Erro ao trocar câmeras: ' + err.message);
+        if (flashActive) {
+            flashBtn.classList.add('flash-on');
+            // Criar overlay de flash
+            if (!document.getElementById('flashOverlay')) {
+                const overlay = document.createElement('div');
+                overlay.id = 'flashOverlay';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.right = '0';
+                overlay.style.bottom = '0';
+                overlay.style.backgroundColor = 'white';
+                overlay.style.pointerEvents = 'none';
+                overlay.style.zIndex = '4000';
+                overlay.style.opacity = '0';
+                document.body.appendChild(overlay);
+            }
+            // Piscar o flash periodicamente (simula luz contínua)
+            flashInterval = setInterval(() => {
+                const overlay = document.getElementById('flashOverlay');
+                if (overlay && flashActive) {
+                    overlay.style.transition = 'opacity 0.1s';
+                    overlay.style.opacity = '0.3';
+                    setTimeout(() => {
+                        if (overlay) overlay.style.opacity = '0';
+                    }, 100);
+                }
+            }, 500);
+        } else {
+            flashBtn.classList.remove('flash-on');
+            if (flashInterval) {
+                clearInterval(flashInterval);
+                flashInterval = null;
+            }
+            const overlay = document.getElementById('flashOverlay');
+            if (overlay) overlay.style.opacity = '0';
         }
     }
     
@@ -367,12 +373,15 @@
                     <div class="camera-pip" id="pipVideoContainer">
                         <video id="pipVideo" autoplay playsinline muted></video>
                     </div>
+                    <div class="label-cameras">
+                        🎥 Câmera Ambiente (Traseira) | 👤 Selfie
+                    </div>
                     <div id="recordingTimer" class="timer" style="display: none;">00:00</div>
                 </div>
                 <div class="camera-controls">
                     <button class="camera-btn capture" id="btnFoto">📸</button>
                     <button class="camera-btn record" id="btnVideo">🎥</button>
-                    <button class="camera-btn swap" id="btnSwap">🔄</button>
+                    <button class="camera-btn flash" id="btnFlash">💡</button>
                     <button class="camera-btn close" id="btnFechar">✕</button>
                 </div>
             </div>
@@ -380,13 +389,23 @@
         
         document.body.insertAdjacentHTML('beforeend', cameraHtml);
         
-        const mainVideo = document.getElementById('mainVideo');
-        const pipVideo = document.getElementById('pipVideo');
+        const mainVideo = document.getElementById('mainVideo');  // Ambiente (traseira) - GRANDE
+        const pipVideo = document.getElementById('pipVideo');     // Selfie (frontal) - PEQUENO
         
-        mainVideo.srcObject = mainStream;
-        pipVideo.srcObject = pipStream;
+        mainVideo.srcObject = backStream;
+        pipVideo.srcObject = frontStream;
         
         document.getElementById('btnFoto').onclick = () => {
+            if (flashActive) {
+                const overlay = document.getElementById('flashOverlay');
+                if (overlay) {
+                    overlay.style.transition = 'opacity 0.05s';
+                    overlay.style.opacity = '0.8';
+                    setTimeout(() => {
+                        if (overlay) overlay.style.opacity = '0';
+                    }, 100);
+                }
+            }
             tirarFotoDupla();
         };
         
@@ -398,15 +417,15 @@
             }
         };
         
-        document.getElementById('btnSwap').onclick = () => {
-            trocarCameras();
+        document.getElementById('btnFlash').onclick = () => {
+            ligarFlash();
         };
         
         document.getElementById('btnFechar').onclick = () => {
             fecharCamera();
         };
         
-        // Arrastar PiP
+        // Arrastar PiP (selfie)
         const pipContainer = document.getElementById('pipVideoContainer');
         let isDragging = false;
         let startX, startY, startLeft, startBottom;
@@ -441,8 +460,8 @@
     }
     
     function tirarFotoDupla() {
-        const mainVideo = document.getElementById('mainVideo');
-        const pipVideo = document.getElementById('pipVideo');
+        const mainVideo = document.getElementById('mainVideo');  // Ambiente
+        const pipVideo = document.getElementById('pipVideo');     // Selfie
         
         if (!mainVideo || !pipVideo) return;
         
@@ -452,10 +471,10 @@
         canvas.width = mainVideo.videoWidth;
         canvas.height = mainVideo.videoHeight;
         
-        // Desenhar vídeo principal
+        // Desenhar vídeo principal (AMBIENTE - traseira)
         ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
         
-        // Desenhar PiP
+        // Desenhar PiP (SELFIE - frontal)
         const pipWidth = canvas.width * 0.25;
         const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
         const pipX = canvas.width - pipWidth - 20;
@@ -467,18 +486,18 @@
         ctx.lineWidth = 3;
         ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
         
-        // Texto LPX
+        // Labels
         ctx.fillStyle = 'white';
         ctx.font = 'bold 16px Arial';
         ctx.shadowColor = 'black';
         ctx.shadowBlur = 4;
-        ctx.fillText('🎥 LPX', 15, 40);
-        ctx.fillText('📷 Camera 2', pipX + 10, pipY + 25);
+        ctx.fillText('📷 AMBIENTE', 15, 40);
+        ctx.fillText('👤 SELFIE', pipX + 10, pipY + 25);
         ctx.shadowBlur = 0;
         
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         
-        const legenda = prompt('Digite uma legenda:', '📸 Foto com LPX');
+        const legenda = prompt('Digite uma legenda:', '📸 Foto: Ambiente + Selfie');
         adicionarPost('foto', dataUrl, legenda);
         alert('✅ Foto salva no Feed!');
         
@@ -496,8 +515,10 @@
         
         function desenharFrame() {
             if (!isRecording) return;
+            // Desenhar ambiente (traseira)
             ctx.drawImage(mainVideo, 0, 0, canvas.width, canvas.height);
             
+            // Desenhar selfie (frontal) no PiP
             const pipWidth = canvas.width * 0.25;
             const pipHeight = (pipVideo.videoHeight / pipVideo.videoWidth) * pipWidth;
             const pipX = canvas.width - pipWidth - 20;
@@ -508,13 +529,20 @@
             ctx.lineWidth = 3;
             ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
             
+            // Textos
             ctx.fillStyle = 'white';
             ctx.font = 'bold 14px Arial';
             ctx.shadowColor = 'black';
             ctx.shadowBlur = 3;
-            ctx.fillText('🎥 LPX', 10, 30);
-            ctx.fillText('📷 Camera 2', pipX + 10, pipY + 20);
+            ctx.fillText('📷 AMBIENTE', 10, 30);
+            ctx.fillText('👤 SELFIE', pipX + 10, pipY + 20);
             ctx.shadowBlur = 0;
+            
+            if (flashActive) {
+                // Efeito de flash suave durante gravação
+                ctx.fillStyle = 'rgba(255,255,200,0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
             
             animationFrame = requestAnimationFrame(desenharFrame);
         }
@@ -531,7 +559,7 @@
         mediaRecorder.onstop = () => {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
-            const legenda = prompt('Digite uma legenda:', '🎥 Vídeo com LPX');
+            const legenda = prompt('Digite uma legenda:', '🎥 Vídeo: Ambiente + Selfie');
             adicionarPost('video', url, legenda);
             alert('✅ Vídeo salvo no Feed!');
             
@@ -576,8 +604,16 @@
             if (animationFrame) cancelAnimationFrame(animationFrame);
         }
         
-        if (mainStream) mainStream.getTracks().forEach(t => t.stop());
-        if (pipStream) pipStream.getTracks().forEach(t => t.stop());
+        if (flashInterval) {
+            clearInterval(flashInterval);
+            flashInterval = null;
+        }
+        
+        const overlay = document.getElementById('flashOverlay');
+        if (overlay) overlay.remove();
+        
+        if (backStream) backStream.getTracks().forEach(t => t.stop());
+        if (frontStream) frontStream.getTracks().forEach(t => t.stop());
         
         document.getElementById('cameraContainer')?.remove();
     }
@@ -593,11 +629,9 @@
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
             const legenda = prompt('Digite uma legenda:', '');
             const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
             const reader = new FileReader();
-            
             reader.onload = async (event) => {
                 await adicionarPost(tipo, event.target.result, legenda);
                 alert('✅ Publicado no Feed!');
@@ -613,7 +647,7 @@
                 <div class="modal-content">
                     <h3 style="margin-bottom: 20px;">📤 Nova Publicação</h3>
                     <button class="option-btn primary" onclick="iniciarCameraDupla(); fecharModal()">
-                        🎥 Câmera Dupla (LPX + Camera 2)
+                        🎥 Câmera Dupla (Ambiente + Selfie)
                     </button>
                     <button class="option-btn secondary" onclick="importarGaleria(); fecharModal()">
                         📁 Importar da Galeria
@@ -638,7 +672,6 @@
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = async (event) => {
                 AVATARES[USUARIO_ATUAL.id] = event.target.result;
@@ -878,10 +911,7 @@
         renderizarConteudo();
     }
     
-    // ============================================================
     // EXPOR FUNÇÕES
-    // ============================================================
-    
     window.fazerLogin = fazerLogin;
     window.selecionarPerfil = selecionarPerfil;
     window.abrirModalOpcoes = abrirModalOpcoes;
@@ -894,21 +924,18 @@
     window.mudarAba = mudarAba;
     window.abrirModalAvatar = abrirModalAvatar;
     window.fecharModal = fecharModal;
-    window.trocarCameras = trocarCameras;
     
-    // ============================================================
     // INICIAR
-    // ============================================================
-    
     async function iniciar() {
         await abrirDB();
         await carregarAvataresDB();
         await carregarPostsDB();
         carregarSessao();
         renderizarApp();
-        console.log('🚀 App iniciado com IndexedDB!');
-        console.log('📱 Posts salvos permanentemente');
-        console.log('🔄 Botão para trocar câmeras disponível');
+        console.log('🚀 App iniciado!');
+        console.log('📱 Quadro GRANDE = Câmera Ambiente (Traseira)');
+        console.log('👤 Quadro PEQUENO = Selfie (Frontal)');
+        console.log('💡 Botão de FLASH disponível');
     }
     
     iniciar();
