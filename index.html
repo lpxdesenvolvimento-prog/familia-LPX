@@ -28,7 +28,6 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.3);
         }
 
-        /* Chuva de emojis */
         .emoji-container {
             position: fixed;
             top: 0;
@@ -62,7 +61,6 @@
             }
         }
 
-        /* Tela de Login */
         .login-screen {
             position: fixed;
             top: 0;
@@ -156,7 +154,6 @@
 
         .login-btn:active { transform: scale(0.98); }
 
-        /* Header do Feed */
         .feed-header {
             background: white;
             padding: 15px;
@@ -209,7 +206,6 @@
             padding: 5px;
         }
 
-        /* Menu inferior */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -251,7 +247,6 @@
             padding-top: 10px;
         }
 
-        /* Posts */
         .post {
             background: white;
             margin-bottom: 12px;
@@ -400,7 +395,6 @@
             cursor: pointer;
         }
 
-        /* Modal */
         .modal {
             position: fixed;
             top: 0;
@@ -478,6 +472,7 @@
             text-align: center;
             cursor: pointer;
             margin: 15px 0;
+            background: #f9f9f9;
         }
 
         .progress-bar {
@@ -496,7 +491,6 @@
             transition: width 0.3s;
         }
 
-        /* Live */
         .live-container {
             background: #000;
             min-height: 100vh;
@@ -635,18 +629,12 @@
             padding: 50px;
             color: #999;
         }
-
-        .import-btn {
-            background: #28a745;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
     <div class="app" id="app"></div>
 
     <script>
-        // ==================== USUÁRIOS ====================
         let USUARIOS = {
             pai: { id: 'pai', nome: 'Papai 👨', senha: 'pai123', avatar: '👨', avatarImg: null, status: 'online' },
             mae: { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123', avatar: '👩', avatarImg: null, status: 'online' }
@@ -673,14 +661,14 @@
             container.className = 'emoji-container';
             document.body.appendChild(container);
             
-            for(let i = 0; i < 25; i++) {
+            for(let i = 0; i < 20; i++) {
                 setTimeout(() => {
                     const emoji = EMOJIS_RAIN[Math.floor(Math.random() * EMOJIS_RAIN.length)];
                     const emojiDiv = document.createElement('div');
                     emojiDiv.className = 'floating-emoji';
                     emojiDiv.textContent = emoji;
                     emojiDiv.style.left = Math.random() * 100 + '%';
-                    emojiDiv.style.fontSize = (Math.random() * 30 + 25) + 'px';
+                    emojiDiv.style.fontSize = (Math.random() * 25 + 20) + 'px';
                     emojiDiv.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
                     container.appendChild(emojiDiv);
                     
@@ -688,19 +676,16 @@
                         emojiDiv.remove();
                         if (container.children.length === 0) container.remove();
                     }, 2500);
-                }, i * 60);
+                }, i * 50);
             }
         }
 
-        // ==================== ARMAZENAMENTO ====================
         function loadData() {
             const savedPosts = localStorage.getItem('familia_pro_data');
             if (savedPosts) {
                 try {
                     state.posts = JSON.parse(savedPosts);
-                    console.log('Posts carregados:', state.posts.length);
                 } catch(e) {
-                    console.error('Erro ao carregar posts:', e);
                     state.posts = [];
                 }
             }
@@ -754,7 +739,6 @@
 
         function saveData() {
             localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
-            console.log('Dados salvos! Total de posts:', state.posts.length);
         }
 
         function saveAvatar(usuarioId, avatarData) {
@@ -770,42 +754,23 @@
             USUARIOS[usuarioId].senha = novaSenha;
         }
 
-        // ==================== FUNÇÕES DO FEED ====================
-        
-        function adicionarPost(tipo, dataUrl, legenda, isLiveRecording = false, liveInfo = null) {
-            const novoPost = {
-                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                usuarioId: state.currentUser.id,
-                usuarioNome: state.currentUser.nome,
-                tipo: tipo,
-                url: dataUrl,
-                legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
-                data: new Date().toISOString(),
-                curtidas: [],
-                comentarios: []
-            };
-            
-            if (isLiveRecording && liveInfo) {
-                novoPost.isLiveRecording = true;
-                novoPost.liveMessages = liveInfo.messages;
-                novoPost.liveLikes = liveInfo.likes;
-            }
-            
-            state.posts.unshift(novoPost);
-            saveData();
-            renderizarApp();
-            return true;
-        }
-
-        function publicarArquivo(file, legenda) {
+        // FUNÇÃO PRINCIPAL - POSTAR FOTO/VIDEO (CORRIGIDA)
+        function postarMidia(file, legenda) {
             return new Promise((resolve, reject) => {
                 if (!file) {
-                    reject('Nenhum arquivo selecionado');
+                    reject('Selecione um arquivo');
                     return;
                 }
                 
-                if (file.size > 50 * 1024 * 1024) {
-                    reject('Arquivo muito grande! Máximo 50MB.');
+                // Verifica tamanho (máximo 30MB)
+                if (file.size > 30 * 1024 * 1024) {
+                    reject('Arquivo muito grande! Máximo 30MB.');
+                    return;
+                }
+                
+                // Verifica tipo
+                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+                    reject('Formato não suportado. Use foto ou vídeo.');
                     return;
                 }
                 
@@ -814,36 +779,46 @@
                 
                 reader.onload = function(e) {
                     try {
-                        adicionarPost(tipo, e.target.result, legenda);
+                        const novoPost = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
+                            usuarioId: state.currentUser.id,
+                            usuarioNome: state.currentUser.nome,
+                            tipo: tipo,
+                            url: e.target.result,
+                            legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
+                            data: new Date().toISOString(),
+                            curtidas: [],
+                            comentarios: []
+                        };
+                        
+                        state.posts.unshift(novoPost);
+                        saveData();
                         resolve(true);
                     } catch(err) {
-                        reject('Erro ao processar o arquivo: ' + err.message);
+                        reject('Erro ao processar: ' + err.message);
                     }
                 };
                 
                 reader.onerror = function() {
-                    reject('Erro ao ler o arquivo. Tente novamente.');
+                    reject('Erro ao ler o arquivo');
                 };
                 
                 reader.readAsDataURL(file);
             });
         }
 
-        async function importarMultiplosArquivos(files, legendaPadrao) {
+        // IMPORTAR MÚLTIPLOS ARQUIVOS (CORRIGIDO)
+        async function importarMultiplos(files, legenda) {
             let sucessos = 0;
             let erros = 0;
             
-            for (let i = 0; i < Math.min(files.length, 20); i++) { // Limite de 20 arquivos
+            for (let i = 0; i < Math.min(files.length, 10); i++) {
                 const file = files[i];
-                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                    try {
-                        await publicarArquivo(file, legendaPadrao || 'Importado da galeria 📸');
-                        sucessos++;
-                    } catch(err) {
-                        console.error('Erro ao importar:', err);
-                        erros++;
-                    }
-                } else {
+                try {
+                    await postarMidia(file, legenda);
+                    sucessos++;
+                } catch(err) {
+                    console.error('Erro:', err);
                     erros++;
                 }
             }
@@ -893,7 +868,7 @@
             }
         }
 
-        // ==================== LIVE ====================
+        // LIVE FUNCTIONS
         async function iniciarLive() {
             state.liveActive = true;
             state.liveMessages = [];
@@ -912,13 +887,13 @@
                     videoElement.play();
                 }
                 
-                state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
+                state.mediaRecorder = new MediaRecorder(stream);
                 state.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         state.recordedChunks.push(event.data);
                     }
                 };
-                state.mediaRecorder.start(1000);
+                state.mediaRecorder.start(2000);
                 state.liveStream = stream;
                 
             } catch (err) {
@@ -954,13 +929,13 @@
                     }
                     state.liveStream = stream;
                     state.recordedChunks = [];
-                    state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
+                    state.mediaRecorder = new MediaRecorder(stream);
                     state.mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             state.recordedChunks.push(event.data);
                         }
                     };
-                    state.mediaRecorder.start(1000);
+                    state.mediaRecorder.start(2000);
                 }).catch(err => {
                     alert('Erro ao trocar câmera: ' + err.message);
                 });
@@ -1001,19 +976,30 @@
 
         function salvarLiveNoFeed() {
             if (state.recordedChunks.length === 0) {
-                alert('Aguardando gravação... Aguarde alguns segundos e tente novamente.');
+                alert('Aguardando gravação. Aguarde 3 segundos e tente novamente.');
                 return;
             }
             
             const videoBlob = new Blob(state.recordedChunks, { type: 'video/mp4' });
             const videoUrl = URL.createObjectURL(videoBlob);
             
-            const liveInfo = {
-                messages: [...state.liveMessages],
-                likes: state.liveLikes
+            const novoPost = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 6),
+                usuarioId: state.currentUser.id,
+                usuarioNome: state.currentUser.nome,
+                tipo: 'video',
+                url: videoUrl,
+                legenda: `Live gravada 🔴 - ${state.liveMessages.length} comentários, ${state.liveLikes} curtidas`,
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: [],
+                liveMessages: [...state.liveMessages],
+                liveLikes: state.liveLikes,
+                isLiveRecording: true
             };
             
-            adicionarPost('video', videoUrl, 'Live gravada 🔴', true, liveInfo);
+            state.posts.unshift(novoPost);
+            saveData();
             
             alert('✅ Live salva no feed!');
             encerrarLive();
@@ -1021,7 +1007,7 @@
             renderizarApp();
         }
 
-        // ==================== PERFIL / SENHA ====================
+        // PERFIL
         function modalAlterarSenha() {
             const modalHtml = `
                 <div class="modal" id="configModal">
@@ -1069,7 +1055,7 @@
 
         function modalFotoPerfil() {
             let emojiSelecionado = state.currentUser.avatar || '👨';
-            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕', '😍', '🎉', '✨', '🌟'];
+            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕'];
             
             const modalHtml = `
                 <div class="modal" id="configModal">
@@ -1188,7 +1174,7 @@
             };
         }
 
-        // ==================== MODAL DE CRIAÇÃO ====================
+        // MODAL DE CRIAÇÃO (SIMPLIFICADO E CORRIGIDO)
         function renderizarModalCriacao() {
             const modalHtml = `
                 <div class="modal" id="criarModal">
@@ -1199,7 +1185,7 @@
                         </div>
                         <div class="modal-body">
                             <div class="upload-avatar" id="uploadArea">
-                                📁 Clique para selecionar uma foto ou vídeo
+                                📁 Clique para selecionar UMA foto ou vídeo
                             </div>
                             <div id="previewArea" style="text-align: center; margin: 10px 0; display: none;"></div>
                             <input type="file" id="fileInputPost" accept="image/*,video/*" style="display: none;">
@@ -1211,7 +1197,7 @@
                             <textarea id="legendaPost" rows="2" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
                             
                             <button class="login-btn" id="publicarBtn">📤 Publicar</button>
-                            <button class="login-btn import-btn" id="importarMultiplasBtn">📁 Importar Múltiplas Fotos/Vídeos</button>
+                            <button class="login-btn" id="importarMultiplasBtn" style="background: #28a745; margin-top: 10px;">📁 Importar Múltiplas (até 10)</button>
                         </div>
                     </div>
                 </div>
@@ -1229,13 +1215,10 @@
                         const preview = document.getElementById('previewArea');
                         if (file.type.startsWith('image/')) {
                             preview.innerHTML = `<img src="${ev.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`;
-                        } else if (file.type.startsWith('video/')) {
+                        } else {
                             preview.innerHTML = `<video src="${ev.target.result}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`;
                         }
                         preview.style.display = 'block';
-                    };
-                    reader.onerror = () => {
-                        alert('❌ Erro ao pré-visualizar o arquivo');
                     };
                     reader.readAsDataURL(file);
                 }
@@ -1246,21 +1229,20 @@
                 const legenda = document.getElementById('legendaPost').value;
                 
                 if (!fileInput.files || fileInput.files.length === 0) {
-                    alert('❌ Selecione uma foto ou vídeo primeiro!');
+                    alert('❌ Selecione uma foto ou vídeo!');
                     return;
                 }
                 
-                const file = fileInput.files[0];
                 const progressBar = document.getElementById('progressBar');
                 const progressFill = document.getElementById('progressFill');
                 progressBar.style.display = 'block';
                 progressFill.style.width = '50%';
                 
                 try {
-                    await publicarArquivo(file, legenda);
+                    await postarMidia(fileInput.files[0], legenda);
                     progressFill.style.width = '100%';
                     setTimeout(() => {
-                        alert('✅ Post publicado com sucesso!');
+                        alert('✅ Publicado com sucesso!');
                         fecharModal();
                         renderizarApp();
                     }, 500);
@@ -1279,8 +1261,9 @@
                 input.onchange = async (e) => {
                     const files = Array.from(e.target.files);
                     const legenda = document.getElementById('legendaPost').value;
+                    
                     if (files.length > 0) {
-                        const result = await importarMultiplosArquivos(files, legenda);
+                        const result = await importarMultiplos(files, legenda);
                         alert(`✅ ${result.sucessos} arquivos importados! ${result.erros > 0 ? `(${result.erros} erros)` : ''}`);
                         fecharModal();
                         renderizarApp();
@@ -1299,7 +1282,6 @@
             if (modalCriar) modalCriar.remove();
         }
 
-        // ==================== RENDERIZAÇÃO ====================
         function formatarData(dataISO) {
             const data = new Date(dataISO);
             const agora = new Date();
@@ -1321,7 +1303,6 @@
             
             return state.posts.map(post => {
                 const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
-                const isLiveRecording = post.isLiveRecording === true;
                 
                 return `
                     <div class="post">
@@ -1343,12 +1324,10 @@
                         
                         <div class="post-media">
                             ${post.tipo === 'foto' 
-                                ? `<img src="${post.url}" alt="Foto" loading="lazy" onerror="this.src='https://picsum.photos/400/400?error=1'">`
-                                : post.tipo === 'video'
-                                    ? `<video src="${post.url}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
-                                    : `<div style="padding: 50px; text-align: center; background: #f0f0f0;">Mídia não suportada</div>`
+                                ? `<img src="${post.url}" alt="Foto" loading="lazy">`
+                                : `<video src="${post.url}" controls preload="metadata" style="width:100%; max-height:500px;"></video>`
                             }
-                            ${isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
+                            ${post.isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
                         </div>
                         
                         ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
@@ -1536,7 +1515,6 @@
             if (fab) fab.onclick = () => renderizarModalCriacao();
         }
 
-        // ==================== AUTENTICAÇÃO ====================
         function fazerLogin(perfil, senha, keepLoggedIn) {
             const usuario = USUARIOS[perfil];
             if (usuario && usuario.senha === senha) {
@@ -1581,7 +1559,6 @@
             return false;
         }
 
-        // Handlers globais
         window.excluirPostHandler = excluirPost;
         window.curtirHandler = curtirPost;
         window.comentarHandler = (postId) => {
@@ -1614,7 +1591,6 @@
             }
         };
 
-        // Inicializar
         loadData();
         if (checkAutoLogin()) {
             renderizarApp();
