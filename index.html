@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Família Connect - Meu Perfil</title>
+    <title>Família Connect - Com Fotos de Perfil</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #1a1a2e; }
@@ -15,6 +15,7 @@
         .login-box h1 { color: #667eea; margin-bottom: 30px; }
         .perfil-opcao { display: inline-block; margin: 10px; padding: 15px 25px; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; font-size: 18px; }
         .perfil-opcao.selected { border-color: #667eea; background: #f0f0ff; }
+        .perfil-opcao .avatar-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 5px; }
         .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; margin: 15px 0; font-size: 16px; }
         .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
         
@@ -29,8 +30,37 @@
         .fab { position: fixed; bottom: 80px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 200; }
         
         /* Perfil Header */
-        .profile-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; color: white; }
-        .profile-avatar { font-size: 80px; background: white; width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .profile-header { background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px 20px; text-align: center; color: white; position: relative; }
+        .profile-avatar { 
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%; 
+            background: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0 auto 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar span { font-size: 50px; }
+        .edit-avatar-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
         .profile-name { font-size: 24px; margin-bottom: 5px; }
         .profile-stats { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
         .stat { text-align: center; }
@@ -39,7 +69,8 @@
         
         .post { background: white; margin-bottom: 10px; border-bottom: 1px solid #eee; }
         .post-header { display: flex; padding: 12px; gap: 10px; align-items: center; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 25px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 25px; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .post-nome { font-weight: bold; }
         .post-data { font-size: 11px; color: #999; }
         .post-media img, .post-media video { width: 100%; max-height: 400px; object-fit: cover; }
@@ -54,9 +85,12 @@
         .add-comentario button { background: #667eea; color: white; border: none; border-radius: 20px; padding: 8px 15px; cursor: pointer; }
         
         .loading, .empty { text-align: center; padding: 50px; color: #999; }
-        .grid-fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-        .grid-item { aspect-ratio: 1; overflow: hidden; }
-        .grid-item img, .grid-item video { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+        
+        /* Modal de avatar */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: white; border-radius: 20px; width: 90%; max-width: 400px; padding: 20px; text-align: center; }
+        .upload-avatar-area { border: 2px dashed #ddd; border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; margin: 15px 0; }
+        .preview-avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin: 10px auto; display: block; }
     </style>
 </head>
 <body>
@@ -69,10 +103,46 @@
     
     let USUARIO_ATUAL = null;
     let POSTS = [];
+    let AVATARES = {}; // Armazena as fotos de perfil
+    
     let ABA_ATUAL = 'feed'; // 'feed' ou 'perfil'
     
     const CHAVE_POSTS = 'familia_connect_posts';
     const CHAVE_SESSAO = 'familia_connect_sessao';
+    const CHAVE_AVATARES = 'familia_connect_avatares';
+    
+    function carregarAvatares() {
+        const salvos = localStorage.getItem(CHAVE_AVATARES);
+        if (salvos) {
+            try {
+                AVATARES = JSON.parse(salvos);
+                console.log('Avatares carregados:', AVATARES);
+            } catch(e) {}
+        }
+    }
+    
+    function salvarAvatares() {
+        localStorage.setItem(CHAVE_AVATARES, JSON.stringify(AVATARES));
+    }
+    
+    function getAvatar(usuarioId) {
+        if (AVATARES[usuarioId]) {
+            return `<img src="${AVATARES[usuarioId]}" style="width:100%; height:100%; object-fit:cover;">`;
+        }
+        return usuarioId === 'pai' ? '👨' : '👩';
+    }
+    
+    function getAvatarUrl(usuarioId) {
+        return AVATARES[usuarioId] || null;
+    }
+    
+    function setAvatar(usuarioId, avatarData) {
+        AVATARES[usuarioId] = avatarData;
+        salvarAvatares();
+        
+        // Atualizar também nos posts existentes (os avatares não ficam salvos nos posts, mas podemos atualizar a exibição)
+        renderizarConteudo();
+    }
     
     function carregarPosts() {
         const salvos = localStorage.getItem(CHAVE_POSTS);
@@ -241,6 +311,61 @@
         input.click();
     }
     
+    function abrirModalAvatar() {
+        const modalHtml = `
+            <div class="modal" id="avatarModal">
+                <div class="modal-content">
+                    <h3>📸 Foto de Perfil</h3>
+                    <div class="upload-avatar-area" id="uploadAvatarArea">
+                        📁 Clique para selecionar uma foto
+                    </div>
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+                    <div id="avatarPreview"></div>
+                    <button class="btn" id="salvarAvatarBtn" style="margin-top: 15px;">💾 Salvar Foto</button>
+                    <button onclick="fecharModal()" style="margin-top: 10px; background: #ccc; color: #333;" class="btn">Cancelar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        let selectedFile = null;
+        const uploadArea = document.getElementById('uploadAvatarArea');
+        const fileInput = document.getElementById('avatarFileInput');
+        const previewDiv = document.getElementById('avatarPreview');
+        
+        uploadArea.onclick = () => fileInput.click();
+        
+        fileInput.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                const url = URL.createObjectURL(selectedFile);
+                previewDiv.innerHTML = `<img src="${url}" class="preview-avatar">`;
+            }
+        };
+        
+        document.getElementById('salvarAvatarBtn').onclick = () => {
+            if (!selectedFile) {
+                alert('Selecione uma foto primeiro!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setAvatar(USUARIO_ATUAL.id, event.target.result);
+                alert('✅ Foto de perfil atualizada!');
+                fecharModal();
+                renderizarConteudo();
+            };
+            reader.readAsDataURL(selectedFile);
+        };
+    }
+    
+    function fecharModal() {
+        const modal = document.querySelector('.modal');
+        if (modal) modal.remove();
+    }
+    
     // ============================================================
     // RENDERIZAÇÃO
     // ============================================================
@@ -266,7 +391,9 @@
         return POSTS.map(post => `
             <div class="post">
                 <div class="post-header">
-                    <div class="avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
+                    <div class="avatar">
+                        ${getAvatar(post.usuarioId)}
+                    </div>
                     <div style="flex:1">
                         <div class="post-nome">${post.usuarioNome}</div>
                         <div class="post-data">${formatarData(post.data)}</div>
@@ -304,37 +431,31 @@
         const meusPosts = getMeusPosts();
         const totalCurtidas = meusPosts.reduce((sum, post) => sum + post.curtidas.length, 0);
         
-        // Modo lista de posts (padrão)
-        if (meusPosts.length === 0) {
-            return `
-                <div class="profile-header">
-                    <div class="profile-avatar">${USUARIO_ATUAL.id === 'pai' ? '👨' : '👩'}</div>
-                    <div class="profile-name">${USUARIO_ATUAL.nome}</div>
-                    <div class="profile-stats">
-                        <div class="stat"><div class="stat-number">0</div><div class="stat-label">Posts</div></div>
-                        <div class="stat"><div class="stat-number">0</div><div class="stat-label">Curtidas</div></div>
-                    </div>
-                </div>
-                <div class="empty">📭 Você ainda não tem posts. Clique no + para começar!</div>
-            `;
-        }
-        
         return `
             <div class="profile-header">
-                <div class="profile-avatar">${USUARIO_ATUAL.id === 'pai' ? '👨' : '👩'}</div>
+                <div class="profile-avatar" onclick="abrirModalAvatar()">
+                    ${AVATARES[USUARIO_ATUAL.id] 
+                        ? `<img src="${AVATARES[USUARIO_ATUAL.id]}" style="width:100%; height:100%; object-fit:cover;">` 
+                        : `<span>${USUARIO_ATUAL.id === 'pai' ? '👨' : '👩'}</span>`
+                    }
+                    <div class="edit-avatar-btn">📷</div>
+                </div>
                 <div class="profile-name">${USUARIO_ATUAL.nome}</div>
                 <div class="profile-stats">
                     <div class="stat"><div class="stat-number">${meusPosts.length}</div><div class="stat-label">Posts</div></div>
                     <div class="stat"><div class="stat-number">${totalCurtidas}</div><div class="stat-label">Curtidas</div></div>
                 </div>
+                <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">👆 Clique na foto para alterar</div>
             </div>
             <div style="padding: 15px;">
                 <h3 style="margin-bottom: 15px;">📸 Minhas Publicações</h3>
             </div>
-            ${meusPosts.map(post => `
+            ${meusPosts.length === 0 ? '<div class="empty">📭 Você ainda não tem posts. Clique no + para começar!</div>' : meusPosts.map(post => `
                 <div class="post">
                     <div class="post-header">
-                        <div class="avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
+                        <div class="avatar">
+                            ${getAvatar(post.usuarioId)}
+                        </div>
                         <div style="flex:1">
                             <div class="post-nome">${post.usuarioNome}</div>
                             <div class="post-data">${formatarData(post.data)}</div>
@@ -436,8 +557,14 @@
                     <div class="login-box">
                         <h1>📱 Família Connect</h1>
                         <div>
-                            <div class="perfil-opcao" data-perfil="pai" onclick="selecionarPerfil('pai')">👨 Papai</div>
-                            <div class="perfil-opcao" data-perfil="mae" onclick="selecionarPerfil('mae')">👩 Mamãe</div>
+                            <div class="perfil-opcao" data-perfil="pai" onclick="selecionarPerfil('pai')">
+                                <div class="avatar-mini">${AVATARES['pai'] ? `<img src="${AVATARES['pai']}" class="avatar-mini">` : '👨'}</div>
+                                Papai
+                            </div>
+                            <div class="perfil-opcao" data-perfil="mae" onclick="selecionarPerfil('mae')">
+                                <div class="avatar-mini">${AVATARES['mae'] ? `<img src="${AVATARES['mae']}" class="avatar-mini">` : '👩'}</div>
+                                Mamãe
+                            </div>
                         </div>
                         <input type="hidden" id="perfilSelecionado" value="pai">
                         <input type="password" id="senhaLogin" class="input-senha" placeholder="Digite sua senha">
@@ -491,16 +618,20 @@
     window.excluirPost = excluirPost;
     window.sair = sair;
     window.mudarAba = mudarAba;
+    window.abrirModalAvatar = abrirModalAvatar;
+    window.fecharModal = fecharModal;
     
     // ============================================================
     // INICIAR APP
     // ============================================================
     
+    carregarAvatares();
     carregarPosts();
     carregarSessao();
     renderizarApp();
     
     console.log('🚀 App iniciado com sucesso!');
+    console.log('📸 Avatares:', AVATARES);
 </script>
 </body>
 </html>
