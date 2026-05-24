@@ -2,287 +2,243 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Família Connect - Corrigido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Família Connect - Definitivo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; min-height: 100vh; }
-        .app { max-width: 600px; margin: 0 auto; background: #fff; min-height: 100vh; position: relative; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; }
+        .app { max-width: 600px; margin: 0 auto; background: #fff; min-height: 100vh; }
         
         /* Login */
-        .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: rgba(255,255,255,0.95); border-radius: 40px; padding: 35px 25px; width: 100%; max-width: 350px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
-        .login-box h1 { text-align: center; color: #667eea; margin-bottom: 30px; }
-        .perfil-selector { display: flex; gap: 15px; margin-bottom: 25px; }
-        .perfil-card { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 20px; text-align: center; cursor: pointer; background: white; }
-        .perfil-card.selected { border-color: #667eea; background: #f0f0ff; }
-        .perfil-avatar { font-size: 45px; display: block; margin-bottom: 8px; }
-        .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 16px; margin-bottom: 15px; }
-        .checkbox-area { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
-        .login-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-box { background: white; border-radius: 30px; padding: 40px 25px; width: 90%; max-width: 350px; text-align: center; }
+        .login-box h1 { color: #667eea; margin-bottom: 30px; }
+        .perfil-opcao { display: inline-block; margin: 10px; padding: 15px 25px; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; }
+        .perfil-opcao.selected { border-color: #667eea; background: #f0f0ff; }
+        .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; margin: 15px 0; }
+        .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; }
         
         /* Feed */
-        .feed-header { background: white; padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .feed-header h2 { color: #667eea; }
-        .fab { position: fixed; bottom: 80px; right: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 55px; height: 55px; border-radius: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 200; border: none; font-size: 28px; color: white; }
-        .main-content { padding-bottom: 70px; }
+        .header { background: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; position: sticky; top: 0; }
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         
-        /* Post */
-        .post { background: white; margin-bottom: 12px; border-bottom: 1px solid #eee; }
-        .post-header { padding: 12px 15px; display: flex; align-items: center; gap: 12px; }
-        .post-avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 25px; }
-        .post-info { flex: 1; }
-        .post-nome { font-weight: 700; }
+        .post { background: white; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+        .post-header { display: flex; padding: 12px; gap: 10px; align-items: center; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 25px; }
+        .post-nome { font-weight: bold; }
         .post-data { font-size: 11px; color: #999; }
-        .post-media { width: 100%; background: #f5f5f5; min-height: 200px; display: flex; align-items: center; justify-content: center; }
         .post-media img, .post-media video { width: 100%; max-height: 400px; object-fit: cover; }
-        .post-legenda { padding: 12px 15px; font-size: 14px; }
-        .post-actions { padding: 8px 15px; display: flex; gap: 25px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
-        .action-btn { background: none; border: none; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #666; cursor: pointer; }
-        .action-btn.liked { color: #dc3545; }
-        .comentarios-area { padding: 10px 15px; background: #fafafa; }
-        .comentario { font-size: 13px; margin-bottom: 8px; }
-        .comentario strong { color: #667eea; }
-        .add-comentario { padding: 10px 15px; display: flex; gap: 10px; background: white; }
-        .add-comentario input { flex: 1; padding: 10px 15px; border: 1px solid #eee; border-radius: 25px; font-size: 13px; background: #f5f5f5; }
-        .add-comentario button { background: #667eea; color: white; border: none; border-radius: 25px; padding: 8px 18px; cursor: pointer; }
+        .post-legenda { padding: 12px; }
+        .post-acoes { padding: 8px 12px; display: flex; gap: 20px; border-top: 1px solid #eee; }
+        .acao { background: none; border: none; display: flex; gap: 5px; cursor: pointer; color: #666; }
+        .acao.liked { color: #e74c3c; }
+        .comentarios { padding: 10px 12px; background: #fafafa; }
+        .comentario { font-size: 13px; margin-bottom: 5px; }
+        .add-comentario { display: flex; padding: 10px; gap: 10px; background: white; }
+        .add-comentario input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 20px; }
+        .add-comentario button { background: #667eea; color: white; border: none; border-radius: 20px; padding: 8px 15px; cursor: pointer; }
         
-        /* Modal */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; border-radius: 30px; width: 100%; max-width: 400px; overflow: hidden; }
-        .modal-header { padding: 18px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; }
-        .upload-area { border: 2px dashed #ddd; border-radius: 20px; padding: 40px; text-align: center; cursor: pointer; margin: 15px 0; background: #f9f9f9; }
-        .upload-area:hover { border-color: #667eea; background: #f0f0ff; }
-        .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 15px; margin: 10px 0; }
-        textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 15px; font-size: 15px; margin: 10px 0; font-family: Arial; resize: vertical; }
-        .btn-publicar { background: #28a745; color: white; border: none; padding: 12px; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
-        .btn-close { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 10px; }
-        
-        .loading { text-align: center; padding: 50px; color: #999; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: white; border-radius: 20px; width: 90%; max-width: 400px; padding: 20px; }
+        .upload-area { border: 2px dashed #ddd; border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; margin: 10px 0; }
+        .preview { max-width: 100%; max-height: 200px; border-radius: 10px; margin: 10px 0; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; margin: 10px 0; }
     </style>
 </head>
 <body>
 <div id="app"></div>
 
 <script>
-    // ==================== CONFIGURAÇÃO ====================
-    let currentUser = null;
-    let posts = [];
+    // ============================================================
+    // BANCO DE DADOS SIMPLES E CONFIÁVEL
+    // ============================================================
     
-    // Carregar dados salvos
-    function carregarDados() {
-        try {
-            // Carregar posts
-            const savedPosts = localStorage.getItem('familia_posts');
-            if (savedPosts) {
-                posts = JSON.parse(savedPosts);
-                console.log('Posts carregados:', posts.length);
-            } else {
-                // Posts padrão
-                posts = [
-                    {
-                        id: '1',
-                        usuarioId: 'mae',
-                        usuarioNome: 'Mamãe 👩',
-                        tipo: 'foto',
-                        dataUrl: 'https://picsum.photos/id/20/400/400',
-                        legenda: 'Dia especial em família! 💕',
-                        data: new Date().toISOString(),
-                        curtidas: ['pai'],
-                        comentarios: [{ usuarioId: 'pai', usuarioNome: 'Papai 👨', texto: 'Que lindo! 🥰' }]
-                    },
-                    {
-                        id: '2',
-                        usuarioId: 'pai',
-                        usuarioNome: 'Papai 👨',
-                        tipo: 'foto',
-                        dataUrl: 'https://picsum.photos/id/15/400/400',
-                        legenda: 'Final de semana top! 🎉',
-                        data: new Date(Date.now() - 86400000).toISOString(),
-                        curtidas: ['mae'],
-                        comentarios: []
-                    }
-                ];
-                salvarDados();
+    let USUARIO_ATUAL = null;
+    let POSTS = [];
+    
+    // Nome fixo da chave no localStorage
+    const CHAVE_POSTS = 'familia_connect_posts';
+    const CHAVE_SESSAO = 'familia_connect_sessao';
+    
+    // Função para CARREGAR posts do localStorage
+    function carregarPosts() {
+        const salvos = localStorage.getItem(CHAVE_POSTS);
+        if (salvos) {
+            try {
+                POSTS = JSON.parse(salvos);
+                console.log('✅ Posts carregados:', POSTS.length);
+                return true;
+            } catch(e) {
+                console.error('Erro ao ler posts:', e);
             }
-            
-            // Carregar sessão
-            const session = localStorage.getItem('familia_session');
-            if (session) {
-                const sess = JSON.parse(session);
-                if (sess.userId && sess.expires > Date.now()) {
-                    currentUser = sess.userId === 'pai' ? 
-                        { id: 'pai', nome: 'Papai 👨', senha: 'pai123' } : 
-                        { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123' };
+        }
+        
+        // Se não tem posts, criar posts de exemplo
+        POSTS = [
+            {
+                id: Date.now() + 1,
+                usuarioId: 'mae',
+                usuarioNome: 'Mamãe 👩',
+                tipo: 'foto',
+                midia: 'https://picsum.photos/id/20/400/400',
+                legenda: 'Dia especial em família! 💕',
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: []
+            },
+            {
+                id: Date.now() + 2,
+                usuarioId: 'pai',
+                usuarioNome: 'Papai 👨',
+                tipo: 'foto',
+                midia: 'https://picsum.photos/id/15/400/400',
+                legenda: 'Final de semana top! 🎉',
+                data: new Date(Date.now() - 86400000).toISOString(),
+                curtidas: [],
+                comentarios: []
+            }
+        ];
+        salvarPosts();
+        return true;
+    }
+    
+    // Função para SALVAR posts no localStorage
+    function salvarPosts() {
+        localStorage.setItem(CHAVE_POSTS, JSON.stringify(POSTS));
+        console.log('💾 Posts salvos:', POSTS.length);
+    }
+    
+    // Função para SALVAR sessão
+    function salvarSessao(usuario, manter) {
+        const sessao = {
+            usuarioId: usuario.id,
+            usuarioNome: usuario.nome,
+            expira: manter ? Date.now() + (30 * 24 * 60 * 60 * 1000) : Date.now() + (24 * 60 * 60 * 1000)
+        };
+        localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+    }
+    
+    // Função para CARREGAR sessão
+    function carregarSessao() {
+        const salva = localStorage.getItem(CHAVE_SESSAO);
+        if (salva) {
+            try {
+                const sessao = JSON.parse(salva);
+                if (sessao.expira > Date.now()) {
+                    USUARIO_ATUAL = {
+                        id: sessao.usuarioId,
+                        nome: sessao.usuarioNome,
+                        senha: sessao.usuarioId === 'pai' ? 'pai123' : 'mae123'
+                    };
+                    return true;
                 }
-            }
-        } catch(e) {
-            console.error('Erro ao carregar:', e);
+            } catch(e) {}
         }
+        return false;
     }
     
-    function salvarDados() {
-        try {
-            localStorage.setItem('familia_posts', JSON.stringify(posts));
-            console.log('Posts salvos:', posts.length);
-        } catch(e) {
-            console.error('Erro ao salvar:', e);
-        }
-    }
-    
-    function salvarSessao(userId, keep) {
-        const expira = keep ? Date.now() + 30*24*60*60*1000 : Date.now() + 24*60*60*1000;
-        localStorage.setItem('familia_session', JSON.stringify({ userId, expires: expira }));
-    }
-    
+    // Função para LIMPAR sessão
     function limparSessao() {
-        localStorage.removeItem('familia_session');
+        localStorage.removeItem(CHAVE_SESSAO);
     }
     
-    // ==================== POSTAGEM ====================
-    function adicionarPost(tipo, dataUrl, legenda) {
+    // ============================================================
+    // FUNÇÕES DO APP
+    // ============================================================
+    
+    function adicionarPost(tipo, midia, legenda) {
         const novoPost = {
-            id: Date.now().toString(),
-            usuarioId: currentUser.id,
-            usuarioNome: currentUser.nome,
+            id: Date.now(),
+            usuarioId: USUARIO_ATUAL.id,
+            usuarioNome: USUARIO_ATUAL.nome,
             tipo: tipo,
-            dataUrl: dataUrl,
-            legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
+            midia: midia,
+            legenda: legenda || '',
             data: new Date().toISOString(),
             curtidas: [],
             comentarios: []
         };
-        posts.unshift(novoPost);
-        salvarDados();
+        POSTS.unshift(novoPost);
+        salvarPosts();
         renderizarFeed();
-        console.log('Post adicionado:', novoPost);
         return true;
     }
     
-    // ==================== INTERAÇÕES ====================
-    function curtirPost(postId) {
-        const post = posts.find(p => p.id === postId);
+    function curtirPost(id) {
+        const post = POSTS.find(p => p.id === id);
         if (post) {
-            const idx = post.curtidas.indexOf(currentUser.id);
-            if (idx === -1) {
-                post.curtidas.push(currentUser.id);
+            const index = post.curtidas.indexOf(USUARIO_ATUAL.id);
+            if (index === -1) {
+                post.curtidas.push(USUARIO_ATUAL.id);
             } else {
-                post.curtidas.splice(idx, 1);
+                post.curtidas.splice(index, 1);
             }
-            salvarDados();
+            salvarPosts();
             renderizarFeed();
         }
     }
     
-    function comentarPost(postId) {
-        const input = document.getElementById(`comentarioInput-${postId}`);
-        const texto = input.value;
-        if (!texto.trim()) return;
+    function comentarPost(id) {
+        const input = document.getElementById(`comentario_${id}`);
+        const texto = input.value.trim();
+        if (!texto) return;
         
-        const post = posts.find(p => p.id === postId);
+        const post = POSTS.find(p => p.id === id);
         if (post) {
             post.comentarios.push({
-                usuarioId: currentUser.id,
-                usuarioNome: currentUser.nome,
-                texto: texto.trim(),
+                usuarioId: USUARIO_ATUAL.id,
+                usuarioNome: USUARIO_ATUAL.nome,
+                texto: texto,
                 data: new Date().toISOString()
             });
-            salvarDados();
+            salvarPosts();
             input.value = '';
             renderizarFeed();
         }
     }
     
-    function excluirPost(postId) {
-        const post = posts.find(p => p.id === postId);
-        if (post && post.usuarioId === currentUser.id) {
-            if (confirm('Excluir este post?')) {
-                posts = posts.filter(p => p.id !== postId);
-                salvarDados();
+    function excluirPost(id) {
+        const post = POSTS.find(p => p.id === id);
+        if (post && post.usuarioId === USUARIO_ATUAL.id) {
+            if (confirm('Tem certeza que quer excluir este post?')) {
+                POSTS = POSTS.filter(p => p.id !== id);
+                salvarPosts();
                 renderizarFeed();
-                alert('✅ Post excluído!');
             }
         }
     }
     
-    // ==================== UPLOAD ====================
-    function abrirModalUpload() {
-        const modalHtml = `
-            <div class="modal" id="uploadModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>📤 Nova Publicação</h3>
-                        <button onclick="fecharModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="upload-area" id="uploadArea">
-                            📸 Clique para selecionar foto ou vídeo
-                        </div>
-                        <input type="file" id="fileInput" accept="image/*,video/*" style="display: none;">
-                        <div id="previewDiv"></div>
-                        <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..."></textarea>
-                        <button class="btn-publicar" id="publicarBtn">📤 Publicar</button>
-                        <button class="btn-close" onclick="fecharModal()">Cancelar</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        let selectedFile = null;
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const previewDiv = document.getElementById('previewDiv');
-        
-        uploadArea.onclick = () => fileInput.click();
-        
-        fileInput.onchange = (e) => {
-            selectedFile = e.target.files[0];
-            if (selectedFile) {
-                const url = URL.createObjectURL(selectedFile);
-                const isVideo = selectedFile.type.startsWith('video/');
-                previewDiv.innerHTML = isVideo ? 
-                    `<video src="${url}" class="preview-img" controls></video>` :
-                    `<img src="${url}" class="preview-img">`;
-            }
-        };
-        
-        document.getElementById('publicarBtn').onclick = async () => {
-            if (!selectedFile) {
-                alert('Selecione um arquivo!');
-                return;
-            }
+    function abrirUpload() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,video/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
             
-            const legenda = document.getElementById('legendaInput').value;
-            
-            // Criar post diretamente com o arquivo
+            const legenda = prompt('Digite uma legenda:', '');
+            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const tipo = selectedFile.type.startsWith('image/') ? 'foto' : 'video';
-                adicionarPost(tipo, e.target.result, legenda);
-                alert('✅ Publicado com sucesso!');
-                fecharModal();
-                URL.revokeObjectURL(URL.createObjectURL(selectedFile));
+            
+            reader.onload = (event) => {
+                adicionarPost(tipo, event.target.result, legenda);
+                alert('✅ Post publicado com sucesso!');
             };
-            reader.readAsDataURL(selectedFile);
+            reader.readAsDataURL(file);
         };
+        input.click();
     }
     
-    function fecharModal() {
-        const modal = document.querySelector('.modal');
-        if (modal) modal.remove();
-    }
+    // ============================================================
+    // RENDERIZAÇÃO
+    // ============================================================
     
-    // ==================== RENDERIZAÇÃO ====================
     function formatarData(dataISO) {
         const data = new Date(dataISO);
         const diff = Date.now() - data;
-        const minutos = Math.floor(diff / 60000);
-        if (minutos < 1) return 'Agora';
-        if (minutos < 60) return `${minutos} min`;
-        if (minutos < 1440) return `${Math.floor(minutos / 60)} h`;
+        if (diff < 60000) return 'Agora mesmo';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)} minutos`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)} horas`;
         return data.toLocaleDateString('pt-BR');
     }
     
@@ -290,158 +246,143 @@
         const container = document.getElementById('feedContainer');
         if (!container) return;
         
-        if (posts.length === 0) {
-            container.innerHTML = '<div class="loading">📭 Nenhum post ainda. Clique no + para começar!</div>';
+        if (POSTS.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:50px; color:#999;">📭 Nenhum post ainda. Clique no + para começar!</div>';
             return;
         }
         
-        container.innerHTML = posts.map(post => `
+        container.innerHTML = POSTS.map(post => `
             <div class="post">
                 <div class="post-header">
-                    <div class="post-avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
-                    <div class="post-info">
+                    <div class="avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
+                    <div style="flex:1">
                         <div class="post-nome">${post.usuarioNome}</div>
                         <div class="post-data">${formatarData(post.data)}</div>
                     </div>
-                    ${post.usuarioId === currentUser.id ? `<button onclick="excluirPost('${post.id}')" style="background:none; border:none; font-size:20px; cursor:pointer;">🗑️</button>` : ''}
+                    ${post.usuarioId === USUARIO_ATUAL.id ? `<button onclick="excluirPost(${post.id})" style="background:none; border:none; font-size:20px; cursor:pointer;">🗑️</button>` : ''}
                 </div>
                 <div class="post-media">
                     ${post.tipo === 'foto' 
-                        ? `<img src="${post.dataUrl}" loading="lazy" onerror="this.src='https://picsum.photos/400/400?error=1'">` 
-                        : `<video src="${post.dataUrl}" controls></video>`}
+                        ? `<img src="${post.midia}" loading="lazy" onerror="this.src='https://picsum.photos/400/400'">`
+                        : `<video src="${post.midia}" controls></video>`}
                 </div>
-                ${post.legenda ? `<div class="post-legenda">💬 ${escapeHtml(post.legenda)}</div>` : ''}
-                <div class="post-actions">
-                    <button class="action-btn ${post.curtidas.includes(currentUser.id) ? 'liked' : ''}" onclick="curtirPost('${post.id}')">
+                ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
+                <div class="post-acoes">
+                    <button class="acao ${post.curtidas.includes(USUARIO_ATUAL.id) ? 'liked' : ''}" onclick="curtirPost(${post.id})">
                         ❤️ ${post.curtidas.length}
                     </button>
-                    <button class="action-btn" onclick="document.getElementById('comentarioInput-${post.id}').focus()">
+                    <button class="acao" onclick="document.getElementById('comentario_${post.id}').focus()">
                         💬 ${post.comentarios.length}
                     </button>
                 </div>
-                <div class="comentarios-area">
-                    ${post.comentarios.slice(-2).map(c => `
-                        <div class="comentario"><strong>${escapeHtml(c.usuarioNome)}:</strong> ${escapeHtml(c.texto)}</div>
+                <div class="comentarios">
+                    ${post.comentarios.slice(-3).map(c => `
+                        <div class="comentario"><strong>${c.usuarioNome}:</strong> ${c.texto}</div>
                     `).join('')}
                 </div>
                 <div class="add-comentario">
-                    <input type="text" id="comentarioInput-${post.id}" placeholder="Escreva um comentário...">
-                    <button onclick="comentarPost('${post.id}')">Enviar</button>
+                    <input type="text" id="comentario_${post.id}" placeholder="Escreva um comentário...">
+                    <button onclick="comentarPost(${post.id})">Enviar</button>
                 </div>
             </div>
         `).join('');
     }
     
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    // ==================== LOGIN ====================
-    function login() {
-        const perfil = document.getElementById('perfilSelecionado').value;
-        const senha = document.getElementById('senha').value;
-        const keep = document.getElementById('keepLogged').checked;
-        
-        if (perfil === 'pai' && senha === 'pai123') {
-            currentUser = { id: 'pai', nome: 'Papai 👨', senha: 'pai123' };
-            salvarSessao('pai', keep);
-            renderizarApp();
-        } else if (perfil === 'mae' && senha === 'mae123') {
-            currentUser = { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123' };
-            salvarSessao('mae', keep);
-            renderizarApp();
-        } else {
-            alert('❌ Senha incorreta!\n\nPapai: pai123\nMamãe: mae123');
-        }
-    }
-    
-    function logout() {
-        currentUser = null;
-        limparSessao();
-        renderizarApp();
-    }
-    
-    // ==================== TELA PRINCIPAL ====================
     function renderizarApp() {
         const appDiv = document.getElementById('app');
         
-        if (!currentUser) {
-            // Tela de login
+        // Tela de login
+        if (!USUARIO_ATUAL) {
             appDiv.innerHTML = `
                 <div class="login-screen">
                     <div class="login-box">
                         <h1>📱 Família Connect</h1>
-                        <div class="perfil-selector" id="perfilSelector">
-                            <div class="perfil-card" data-perfil="pai">
-                                <span class="perfil-avatar">👨</span>
-                                <span class="perfil-nome">Papai</span>
-                            </div>
-                            <div class="perfil-card" data-perfil="mae">
-                                <span class="perfil-avatar">👩</span>
-                                <span class="perfil-nome">Mamãe</span>
-                            </div>
+                        <div>
+                            <div class="perfil-opcao" data-perfil="pai">👨 Papai</div>
+                            <div class="perfil-opcao" data-perfil="mae">👩 Mamãe</div>
                         </div>
-                        <input type="hidden" id="perfilSelecionado" value="pai">
-                        <input type="password" id="senha" class="input-senha" placeholder="Digite sua senha">
-                        <div class="checkbox-area">
-                            <input type="checkbox" id="keepLogged">
-                            <label>Manter-me conectado</label>
-                        </div>
-                        <button class="login-btn" onclick="login()">✨ Entrar ✨</button>
-                        <div style="margin-top:20px;text-align:center;font-size:12px;color:#999;">
-                            👨 Papai: pai123 | 👩 Mamãe: mae123
-                        </div>
+                        <input type="password" id="senhaLogin" class="input-senha" placeholder="Digite sua senha">
+                        <label style="display:flex; align-items:center; gap:8px; margin:10px 0;">
+                            <input type="checkbox" id="manterLogin"> Manter-me conectado
+                        </label>
+                        <button class="btn" onclick="fazerLogin()">✨ Entrar ✨</button>
+                        <div style="margin-top:20px; font-size:12px; color:#999;">👨 Senha: pai123 | 👩 Senha: mae123</div>
                     </div>
                 </div>
             `;
             
-            // Selecionar perfil
             let perfilSelecionado = 'pai';
             document.querySelectorAll('[data-perfil]').forEach(el => {
                 el.onclick = () => {
                     document.querySelectorAll('[data-perfil]').forEach(e => e.classList.remove('selected'));
                     el.classList.add('selected');
                     perfilSelecionado = el.dataset.perfil;
-                    document.getElementById('perfilSelecionado').value = perfilSelecionado;
                 };
+                if (el.dataset.perfil === 'pai') el.classList.add('selected');
             });
-            document.querySelector('[data-perfil="pai"]').classList.add('selected');
+            
+            window.fazerLogin = () => {
+                const senha = document.getElementById('senhaLogin').value;
+                const manter = document.getElementById('manterLogin').checked;
+                const senhaCorreta = perfilSelecionado === 'pai' ? 'pai123' : 'mae123';
+                
+                if (senha === senhaCorreta) {
+                    USUARIO_ATUAL = {
+                        id: perfilSelecionado,
+                        nome: perfilSelecionado === 'pai' ? 'Papai 👨' : 'Mamãe 👩',
+                        senha: senhaCorreta
+                    };
+                    salvarSessao(USUARIO_ATUAL, manter);
+                    renderizarApp();
+                } else {
+                    alert('❌ Senha incorreta!');
+                }
+            };
             return;
         }
         
         // Tela principal
         appDiv.innerHTML = `
-            <div class="feed-header">
-                <h2>📱 Família Connect</h2>
+            <div class="header">
+                <h2 style="color:#667eea;">📱 Família Connect</h2>
                 <div>
-                    <span style="margin-right:15px;">👤 ${currentUser.nome}</span>
-                    <button onclick="logout()" style="background:none; border:none; font-size:20px; cursor:pointer;">🚪</button>
+                    <span style="margin-right:15px;">👤 ${USUARIO_ATUAL.nome}</span>
+                    <button onclick="sair()" style="background:none; border:none; font-size:20px; cursor:pointer;">🚪</button>
                 </div>
             </div>
-            <div class="main-content">
-                <div id="feedContainer"></div>
-            </div>
-            <button class="fab" onclick="abrirModalUpload()">+</button>
+            <div id="feedContainer"></div>
+            <button class="fab" onclick="abrirUpload()">+</button>
         `;
         
         renderizarFeed();
     }
     
+    function sair() {
+        USUARIO_ATUAL = null;
+        limparSessao();
+        renderizarApp();
+    }
+    
     // Expor funções globalmente
-    window.login = login;
-    window.logout = logout;
+    window.abrirUpload = abrirUpload;
     window.curtirPost = curtirPost;
     window.comentarPost = comentarPost;
     window.excluirPost = excluirPost;
-    window.abrirModalUpload = abrirModalUpload;
-    window.fecharModal = fecharModal;
+    window.sair = sair;
+    window.fazerLogin = fazerLogin;
     
-    // Iniciar app
-    carregarDados();
+    // ============================================================
+    // INICIAR APP
+    // ============================================================
+    
+    carregarPosts();
+    if (!carregarSessao()) {
+        USUARIO_ATUAL = null;
+    }
     renderizarApp();
+    
+    console.log('🚀 App iniciado!');
+    console.log('📦 Posts salvos:', POSTS.length);
 </script>
 </body>
 </html>
