@@ -655,7 +655,9 @@
             liveMessages: [],
             liveLikes: 0,
             liveStream: null,
-            cameraFacing: 'user'
+            cameraFacing: 'user',
+            mediaRecorder: null,
+            recordedChunks: []
         };
 
         // Lista de emojis para chuva
@@ -690,6 +692,7 @@
             const savedPosts = localStorage.getItem('familia_pro_data');
             if (savedPosts) {
                 state.posts = JSON.parse(savedPosts);
+                console.log('Posts carregados:', state.posts.length);
             } else {
                 state.posts = [
                     {
@@ -735,6 +738,7 @@
 
         function saveData() {
             localStorage.setItem('familia_pro_data', JSON.stringify(state.posts));
+            console.log('Dados salvos! Total de posts:', state.posts.length);
         }
 
         function saveAvatar(usuarioId, avatarData) {
@@ -750,40 +754,52 @@
             USUARIOS[usuarioId].senha = novaSenha;
         }
 
-        // ==================== FUNÇÕES DO FEED - CORRIGIDAS ====================
+        // ==================== FUNÇÕES DO FEED ====================
         
-        // Função para publicar um único arquivo
-        function publicarArquivo(file, legenda, tipo) {
+        function adicionarPost(tipo, fileData, legenda, isLiveRecording = false, liveInfo = null) {
+            const novoPost = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                usuarioId: state.currentUser.id,
+                usuarioNome: state.currentUser.nome,
+                tipo: tipo,
+                url: fileData,
+                legenda: legenda,
+                data: new Date().toISOString(),
+                curtidas: [],
+                comentarios: []
+            };
+            
+            if (isLiveRecording && liveInfo) {
+                novoPost.isLiveRecording = true;
+                novoPost.liveMessages = liveInfo.messages;
+                novoPost.liveLikes = liveInfo.likes;
+                novoPost.legenda = (legenda || 'Live gravada 🔴') + ` - ${liveInfo.messages.length} comentários, ${liveInfo.likes} curtidas`;
+            }
+            
+            state.posts.unshift(novoPost);
+            saveData();
+            renderizarApp();
+            return true;
+        }
+
+        function publicarArquivo(file, legenda) {
             return new Promise((resolve, reject) => {
                 if (!file) {
                     reject('Nenhum arquivo selecionado');
                     return;
                 }
                 
-                // Verificar tamanho (limite de 50MB)
                 if (file.size > 50 * 1024 * 1024) {
                     reject('Arquivo muito grande! Máximo 50MB.');
                     return;
                 }
                 
+                const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     try {
-                        const novoPost = {
-                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                            usuarioId: state.currentUser.id,
-                            usuarioNome: state.currentUser.nome,
-                            tipo: tipo,
-                            url: e.target.result,
-                            legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
-                            data: new Date().toISOString(),
-                            curtidas: [],
-                            comentarios: []
-                        };
-                        
-                        state.posts.unshift(novoPost);
-                        saveData();
+                        adicionarPost(tipo, e.target.result, legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'));
                         resolve(true);
                     } catch(err) {
                         reject('Erro ao processar o arquivo: ' + err.message);
@@ -798,25 +814,21 @@
             });
         }
 
-        // Função para importar múltiplos arquivos
-        async function importarMultiplosArquivos(files) {
+        async function importarMultiplosArquivos(files, legendaPadrao) {
             let sucessos = 0;
             let erros = 0;
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const tipo = file.type.startsWith('image/') ? 'foto' : (file.type.startsWith('video/') ? 'video' : null);
-                
-                if (!tipo) {
-                    erros++;
-                    continue;
-                }
-                
-                try {
-                    await publicarArquivo(file, 'Importado da galeria 📸', tipo);
-                    sucessos++;
-                } catch(err) {
-                    console.error('Erro ao importar:', err);
+                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                    try {
+                        await publicarArquivo(file, legendaPadrao || 'Importado da galeria 📸');
+                        sucessos++;
+                    } catch(err) {
+                        console.error('Erro ao importar:', err);
+                        erros++;
+                    }
+                } else {
                     erros++;
                 }
             }
@@ -866,11 +878,12 @@
             }
         }
 
-        // ==================== LIVE ====================
+        // ==================== LIVE COM GRAVAÇÃO ====================
         async function iniciarLive() {
             state.liveActive = true;
             state.liveMessages = [];
             state.liveLikes = 0;
+            state.recordedChunks = [];
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -883,6 +896,15 @@
                     videoElement.srcObject = stream;
                     videoElement.play();
                 }
+                
+                // Iniciar gravação
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        state.recordedChunks.push(event.data);
+                    }
+                };
+                state.mediaRecorder.start(1000);
                 
                 state.liveStream = stream;
                 
@@ -904,6 +926,9 @@
             
             if (state.liveStream) {
                 state.liveStream.getTracks().forEach(track => track.stop());
+                if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+                    state.mediaRecorder.stop();
+                }
                 
                 navigator.mediaDevices.getUserMedia({
                     video: { facingMode: state.cameraFacing },
@@ -915,6 +940,16 @@
                         videoElement.play();
                     }
                     state.liveStream = stream;
+                    
+                    // Reiniciar gravação
+                    state.recordedChunks = [];
+                    state.mediaRecorder = new MediaRecorder(stream);
+                    state.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            state.recordedChunks.push(event.data);
+                        }
+                    };
+                    state.mediaRecorder.start(1000);
                 }).catch(err => {
                     alert('Erro ao trocar câmera: ' + err.message);
                 });
@@ -922,6 +957,9 @@
         }
 
         function encerrarLive() {
+            if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+                state.mediaRecorder.stop();
+            }
             if (state.liveStream) {
                 state.liveStream.getTracks().forEach(track => track.stop());
                 state.liveStream = null;
@@ -951,28 +989,22 @@
         }
 
         function salvarLiveNoFeed() {
-            if (state.liveMessages.length === 0) {
-                alert('Nenhuma live para salvar!');
+            if (state.recordedChunks.length === 0) {
+                alert('Nenhum vídeo gravado. Aguarde alguns segundos e tente novamente.');
                 return;
             }
             
-            const novoPost = {
-                id: Date.now().toString(),
-                usuarioId: state.currentUser.id,
-                usuarioNome: state.currentUser.nome,
-                tipo: 'live',
-                legenda: `Live gravada 🔴 - ${state.liveMessages.length} comentários, ${state.liveLikes} curtidas`,
-                data: new Date().toISOString(),
-                curtidas: [],
-                comentarios: [],
-                liveMessages: [...state.liveMessages],
-                liveLikes: state.liveLikes
+            const videoBlob = new Blob(state.recordedChunks, { type: 'video/mp4' });
+            const videoUrl = URL.createObjectURL(videoBlob);
+            
+            const liveInfo = {
+                messages: [...state.liveMessages],
+                likes: state.liveLikes
             };
             
-            state.posts.unshift(novoPost);
-            saveData();
+            adicionarPost('video', videoUrl, 'Live gravada 🔴', true, liveInfo);
             
-            alert('✅ Live salva no feed!');
+            alert('✅ Live salva no feed com o vídeo, comentários e curtidas!');
             encerrarLive();
             state.activeTab = 'feed';
             renderizarApp();
@@ -1155,17 +1187,6 @@
                             <button class="icon-btn" onclick="window.fecharModal()">✕</button>
                         </div>
                         <div class="modal-body">
-                            <div class="perfil-selector" style="margin-bottom: 15px;">
-                                <div class="perfil-card selected" id="tipoFoto" style="flex: 1;">
-                                    <span class="perfil-avatar">📷</span>
-                                    <span>Foto</span>
-                                </div>
-                                <div class="perfil-card" id="tipoVideo" style="flex: 1;">
-                                    <span class="perfil-avatar">🎥</span>
-                                    <span>Vídeo</span>
-                                </div>
-                            </div>
-                            
                             <div class="upload-avatar" id="uploadArea">
                                 📁 Clique para selecionar uma foto ou vídeo
                             </div>
@@ -1186,30 +1207,6 @@
             `;
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            let tipoSelecionado = 'foto';
-            
-            document.getElementById('tipoFoto').onclick = () => {
-                tipoSelecionado = 'foto';
-                document.getElementById('tipoFoto').classList.add('selected');
-                document.getElementById('tipoVideo').classList.remove('selected');
-                document.getElementById('fileInputPost').accept = 'image/*';
-                document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar uma foto';
-                document.getElementById('previewArea').style.display = 'none';
-                document.getElementById('previewArea').innerHTML = '';
-                document.getElementById('fileInputPost').value = '';
-            };
-            
-            document.getElementById('tipoVideo').onclick = () => {
-                tipoSelecionado = 'video';
-                document.getElementById('tipoVideo').classList.add('selected');
-                document.getElementById('tipoFoto').classList.remove('selected');
-                document.getElementById('fileInputPost').accept = 'video/*';
-                document.getElementById('uploadArea').innerHTML = '📁 Clique para selecionar um vídeo';
-                document.getElementById('previewArea').style.display = 'none';
-                document.getElementById('previewArea').innerHTML = '';
-                document.getElementById('fileInputPost').value = '';
-            };
             
             document.getElementById('uploadArea').onclick = () => document.getElementById('fileInputPost').click();
             
@@ -1243,16 +1240,13 @@
                 }
                 
                 const file = fileInput.files[0];
-                const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-                
-                // Mostrar progresso
                 const progressBar = document.getElementById('progressBar');
                 const progressFill = document.getElementById('progressFill');
                 progressBar.style.display = 'block';
                 progressFill.style.width = '50%';
                 
                 try {
-                    await publicarArquivo(file, legenda, tipo);
+                    await publicarArquivo(file, legenda);
                     progressFill.style.width = '100%';
                     setTimeout(() => {
                         alert('✅ Post publicado com sucesso!');
@@ -1273,21 +1267,10 @@
                 input.accept = 'image/*,video/*';
                 input.onchange = async (e) => {
                     const files = Array.from(e.target.files);
+                    const legenda = document.getElementById('legendaPost').value;
                     if (files.length > 0) {
-                        const legenda = document.getElementById('legendaPost').value;
-                        let sucessos = 0;
-                        
-                        for (const file of files) {
-                            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-                            try {
-                                await publicarArquivo(file, legenda || 'Importado da galeria 📸', tipo);
-                                sucessos++;
-                            } catch(err) {
-                                console.error('Erro:', err);
-                            }
-                        }
-                        
-                        alert(`✅ ${sucessos} de ${files.length} arquivos importados!`);
+                        const result = await importarMultiplosArquivos(files, legenda);
+                        alert(`✅ ${result.sucessos} arquivos importados! ${result.erros > 0 ? `(${result.erros} erros)` : ''}`);
                         fecharModal();
                         renderizarApp();
                     } else {
@@ -1327,7 +1310,7 @@
             
             return state.posts.map(post => {
                 const usuarioPost = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
-                const isLivePost = post.liveMessages && post.liveMessages.length > 0;
+                const isLiveRecording = post.isLiveRecording === true;
                 
                 return `
                     <div class="post">
@@ -1350,15 +1333,11 @@
                         <div class="post-media">
                             ${post.tipo === 'foto' 
                                 ? `<img src="${post.url}" alt="Foto" loading="lazy" onerror="this.src='https://picsum.photos/400/400?error=1'">`
-                                : post.tipo === 'live'
-                                    ? `<div style="padding: 50px; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 10px;">
-                                        <div style="font-size: 48px;">🔴</div>
-                                        <div style="margin-top: 10px;">Live gravada</div>
-                                        <div style="margin-top: 5px; font-size: 12px;">❤️ ${post.liveLikes || 0} curtidas | 💬 ${post.liveMessages?.length || 0} comentários</div>
-                                       </div>`
-                                    : `<video src="${post.url}" controls preload="metadata"></video>`
+                                : post.tipo === 'video'
+                                    ? `<video src="${post.url}" controls preload="metadata" style="width:100%"></video>`
+                                    : `<div style="padding: 50px; text-align: center; background: #f0f0f0;">Mídia não suportada</div>`
                             }
-                            ${isLivePost ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
+                            ${isLiveRecording ? '<div class="live-badge-post">🔴 LIVE GRAVADA</div>' : ''}
                         </div>
                         
                         ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
@@ -1427,7 +1406,7 @@
                     
                     <div class="live-actions">
                         <button onclick="window.curtirLiveHandler()">❤️</button>
-                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border-radius: 25px; font-size: 16px;">💾</button>
+                        <button onclick="window.salvarLiveHandler()" style="background: #28a745; border-radius: 25px; font-size: 16px;">💾 Salvar</button>
                         <button onclick="window.encerrarLiveHandler()">🔴</button>
                     </div>
                     
