@@ -2,703 +2,84 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Família Connect - App Completo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Família Connect - Corrigido</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #1a1a2e;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .app {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #fff;
-            min-height: 100vh;
-            position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.3);
-        }
-
-        .emoji-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            overflow: hidden;
-        }
-
-        .floating-emoji {
-            position: absolute;
-            font-size: 30px;
-            animation: floatUp 2.5s ease-out forwards;
-            pointer-events: none;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0.5); opacity: 1; }
-            100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
-        }
-
-        .login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-box {
-            background: rgba(255,255,255,0.95);
-            border-radius: 40px;
-            padding: 35px 25px;
-            width: 100%;
-            max-width: 350px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-
-        .login-box h1 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 8px;
-            font-size: 32px;
-        }
-
-        .perfil-selector {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .perfil-card {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
-            text-align: center;
-            cursor: pointer;
-            background: white;
-        }
-
-        .perfil-card.selected {
-            border-color: #667eea;
-            background: #f0f0ff;
-        }
-
-        .perfil-avatar {
-            font-size: 45px;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .perfil-nome {
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .input-senha {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 15px;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .checkbox-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .feed-header {
-            background: white;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo-area h2 {
-            font-size: 18px;
-            color: #667eea;
-        }
-
-        .online-badge {
-            width: 10px;
-            height: 10px;
-            background: #28a745;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 20px;
-            border-top: 1px solid #eee;
-            z-index: 100;
-        }
-
-        .nav-item {
-            text-align: center;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .nav-item.active {
-            color: #667eea;
-            transform: translateY(-3px);
-        }
-
-        .nav-icon {
-            font-size: 24px;
-        }
-
-        .main-content {
-            padding-bottom: 70px;
-            padding-top: 10px;
-        }
-
-        .post {
-            background: white;
-            margin-bottom: 12px;
-        }
-
-        .post-header {
-            padding: 12px 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .post-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 25px;
-            background: #f0f0f0;
-        }
-
-        .post-avatar-img {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .post-info {
-            flex: 1;
-        }
-
-        .post-nome {
-            font-weight: 700;
-        }
-
-        .post-data {
-            font-size: 11px;
-            color: #999;
-        }
-
-        .post-media {
-            width: 100%;
-            background: #f5f5f5;
-            min-height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .post-media img, .post-media video {
-            width: 100%;
-            max-height: 500px;
-            object-fit: cover;
-        }
-
-        .live-badge-post {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #dc3545;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .post-legenda {
-            padding: 12px 15px;
-            font-size: 14px;
-        }
-
-        .post-actions {
-            padding: 8px 15px;
-            display: flex;
-            gap: 25px;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .action-btn.liked {
-            color: #dc3545;
-        }
-
-        .comentarios-area {
-            padding: 10px 15px;
-            background: #fafafa;
-        }
-
-        .comentario {
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-
-        .comentario strong {
-            color: #667eea;
-        }
-
-        .add-comentario {
-            padding: 10px 15px;
-            display: flex;
-            gap: 10px;
-            background: white;
-        }
-
-        .add-comentario input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #eee;
-            border-radius: 25px;
-            font-size: 13px;
-            background: #f5f5f5;
-        }
-
-        .add-comentario button {
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 8px 18px;
-            cursor: pointer;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 30px;
-            width: 100%;
-            max-width: 400px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 18px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            font-size: 15px;
-            margin-bottom: 15px;
-        }
-
-        .avatar-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
-        }
-
-        .avatar-option {
-            width: 70px;
-            height: 70px;
-            border-radius: 35px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            cursor: pointer;
-            border: 3px solid transparent;
-        }
-
-        .avatar-option.selected {
-            border-color: #667eea;
-            background: #f0f0ff;
-        }
-
-        .upload-avatar {
-            border: 2px dashed #ddd;
-            border-radius: 20px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            margin: 15px 0;
-            background: #f9f9f9;
-        }
-
-        .camera-buttons {
-            display: flex;
-            gap: 15px;
-            margin: 15px 0;
-        }
-
-        .camera-btn {
-            flex: 1;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .camera-preview {
-            width: 100%;
-            background: #000;
-            border-radius: 15px;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .camera-preview video, .camera-preview img {
-            width: 100%;
-            border-radius: 15px;
-            max-height: 300px;
-            object-fit: cover;
-        }
-
-        .fab {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 55px;
-            height: 55px;
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 200;
-            border: none;
-            font-size: 28px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: #999;
-        }
-
-        .camera-action-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .camera-action-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-capture {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-stop {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-close {
-            background: #6c757d;
-            color: white;
-        }
-
-        .live-container {
-            background: #000;
-            min-height: 100vh;
-            position: relative;
-        }
-
-        .live-video {
-            width: 100%;
-            height: 60vh;
-            background: #111;
-            position: relative;
-        }
-
-        .live-video video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .live-info {
-            position: absolute;
-            top: 20px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-        }
-
-        .live-badge {
-            background: #dc3545;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .live-actions {
-            position: absolute;
-            right: 15px;
-            bottom: 100px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 10;
-        }
-
-        .live-actions button {
-            background: rgba(0,0,0,0.6);
-            border: none;
-            border-radius: 50%;
-            padding: 12px;
-            font-size: 28px;
-            cursor: pointer;
-        }
-
-        .live-chat {
-            background: rgba(0,0,0,0.7);
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .live-message {
-            color: white;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-
-        .live-message strong {
-            color: #ff69b4;
-        }
-
-        .live-input-area {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            padding: 10px;
-            background: rgba(0,0,0,0.8);
-            gap: 10px;
-        }
-
-        .live-input {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 25px;
-            background: #333;
-            color: white;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a2e; min-height: 100vh; }
+        .app { max-width: 600px; margin: 0 auto; background: #fff; min-height: 100vh; position: relative; }
+        
+        /* Login */
+        .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: rgba(255,255,255,0.95); border-radius: 40px; padding: 35px 25px; width: 100%; max-width: 350px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        .login-box h1 { text-align: center; color: #667eea; margin-bottom: 30px; }
+        .perfil-selector { display: flex; gap: 15px; margin-bottom: 25px; }
+        .perfil-card { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 20px; text-align: center; cursor: pointer; background: white; }
+        .perfil-card.selected { border-color: #667eea; background: #f0f0ff; }
+        .perfil-avatar { font-size: 45px; display: block; margin-bottom: 8px; }
+        .input-senha { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 16px; margin-bottom: 15px; }
+        .checkbox-area { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+        .login-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        
+        /* Feed */
+        .feed-header { background: white; padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .feed-header h2 { color: #667eea; }
+        .fab { position: fixed; bottom: 80px; right: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 55px; height: 55px; border-radius: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 200; border: none; font-size: 28px; color: white; }
+        .main-content { padding-bottom: 70px; }
+        
+        /* Post */
+        .post { background: white; margin-bottom: 12px; border-bottom: 1px solid #eee; }
+        .post-header { padding: 12px 15px; display: flex; align-items: center; gap: 12px; }
+        .post-avatar { width: 45px; height: 45px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 25px; }
+        .post-info { flex: 1; }
+        .post-nome { font-weight: 700; }
+        .post-data { font-size: 11px; color: #999; }
+        .post-media { width: 100%; background: #f5f5f5; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        .post-media img, .post-media video { width: 100%; max-height: 400px; object-fit: cover; }
+        .post-legenda { padding: 12px 15px; font-size: 14px; }
+        .post-actions { padding: 8px 15px; display: flex; gap: 25px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .action-btn { background: none; border: none; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #666; cursor: pointer; }
+        .action-btn.liked { color: #dc3545; }
+        .comentarios-area { padding: 10px 15px; background: #fafafa; }
+        .comentario { font-size: 13px; margin-bottom: 8px; }
+        .comentario strong { color: #667eea; }
+        .add-comentario { padding: 10px 15px; display: flex; gap: 10px; background: white; }
+        .add-comentario input { flex: 1; padding: 10px 15px; border: 1px solid #eee; border-radius: 25px; font-size: 13px; background: #f5f5f5; }
+        .add-comentario button { background: #667eea; color: white; border: none; border-radius: 25px; padding: 8px 18px; cursor: pointer; }
+        
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; border-radius: 30px; width: 100%; max-width: 400px; overflow: hidden; }
+        .modal-header { padding: 18px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; }
+        .upload-area { border: 2px dashed #ddd; border-radius: 20px; padding: 40px; text-align: center; cursor: pointer; margin: 15px 0; background: #f9f9f9; }
+        .upload-area:hover { border-color: #667eea; background: #f0f0ff; }
+        .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 15px; margin: 10px 0; }
+        textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 15px; font-size: 15px; margin: 10px 0; font-family: Arial; resize: vertical; }
+        .btn-publicar { background: #28a745; color: white; border: none; padding: 12px; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-close { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 10px; }
+        
+        .loading { text-align: center; padding: 50px; color: #999; }
     </style>
 </head>
 <body>
-    <div class="app" id="app"></div>
+<div id="app"></div>
 
-    <script>
-        // ==================== USUÁRIOS ====================
-        const USUARIOS = {
-            pai: { id: 'pai', nome: 'Papai 👨', senha: 'pai123', avatar: '👨', avatarImg: null },
-            mae: { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123', avatar: '👩', avatarImg: null }
-        };
-
-        let currentUser = null;
-        let posts = [];
-        let activeTab = 'feed';
-        
-        // Live
-        let liveActive = false;
-        let liveMessages = [];
-        let liveLikes = 0;
-        let liveStream = null;
-        let liveRecorder = null;
-        let liveChunks = [];
-        
-        // Camera
-        let cameraStream = null;
-        let isVideoMode = false;
-        let videoRecorder = null;
-        let videoChunks = [];
-
-        const EMOJIS_RAIN = ['❤️', '💕', '💖', '💗', '💓', '💝', '💟', '♥️', '😍', '🥰', '😘', '💋', '🌸', '🌹', '⭐', '✨', '🎉', '🎊'];
-
-        function criarChuvaEmojis() {
-            const container = document.createElement('div');
-            container.className = 'emoji-container';
-            document.body.appendChild(container);
-            
-            for(let i = 0; i < 25; i++) {
-                setTimeout(() => {
-                    const emoji = EMOJIS_RAIN[Math.floor(Math.random() * EMOJIS_RAIN.length)];
-                    const div = document.createElement('div');
-                    div.className = 'floating-emoji';
-                    div.textContent = emoji;
-                    div.style.left = Math.random() * 100 + '%';
-                    div.style.fontSize = (Math.random() * 30 + 25) + 'px';
-                    div.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
-                    container.appendChild(div);
-                    setTimeout(() => { div.remove(); if (container.children.length === 0) container.remove(); }, 2500);
-                }, i * 60);
-            }
-        }
-
-        // ==================== ARMAZENAMENTO ====================
-        function salvarDados() {
-            try {
-                localStorage.setItem('familia_posts', JSON.stringify(posts));
-                console.log('Posts salvos:', posts.length);
-            } catch(e) {
-                console.error('Erro ao salvar posts:', e);
-            }
-        }
-
-        function carregarDados() {
-            try {
-                const salvos = localStorage.getItem('familia_posts');
-                if (salvos) {
-                    posts = JSON.parse(salvos);
-                    console.log('Posts carregados:', posts.length);
-                }
-            } catch(e) {
-                console.error('Erro ao carregar posts:', e);
-                posts = [];
-            }
-            
-            if (!posts || posts.length === 0) {
+<script>
+    // ==================== CONFIGURAÇÃO ====================
+    let currentUser = null;
+    let posts = [];
+    
+    // Carregar dados salvos
+    function carregarDados() {
+        try {
+            // Carregar posts
+            const savedPosts = localStorage.getItem('familia_posts');
+            if (savedPosts) {
+                posts = JSON.parse(savedPosts);
+                console.log('Posts carregados:', posts.length);
+            } else {
+                // Posts padrão
                 posts = [
                     {
                         id: '1',
@@ -710,683 +91,357 @@
                         data: new Date().toISOString(),
                         curtidas: ['pai'],
                         comentarios: [{ usuarioId: 'pai', usuarioNome: 'Papai 👨', texto: 'Que lindo! 🥰' }]
+                    },
+                    {
+                        id: '2',
+                        usuarioId: 'pai',
+                        usuarioNome: 'Papai 👨',
+                        tipo: 'foto',
+                        dataUrl: 'https://picsum.photos/id/15/400/400',
+                        legenda: 'Final de semana top! 🎉',
+                        data: new Date(Date.now() - 86400000).toISOString(),
+                        curtidas: ['mae'],
+                        comentarios: []
                     }
                 ];
                 salvarDados();
             }
             
-            // Carregar avatares
-            try {
-                const avatars = localStorage.getItem('familia_avatars');
-                if (avatars) {
-                    const avatarsObj = JSON.parse(avatars);
-                    if (avatarsObj.pai) USUARIOS.pai.avatarImg = avatarsObj.pai;
-                    if (avatarsObj.mae) USUARIOS.mae.avatarImg = avatarsObj.mae;
-                }
-            } catch(e) {}
-            
             // Carregar sessão
-            try {
-                const session = localStorage.getItem('familia_session');
-                if (session) {
-                    const sessionObj = JSON.parse(session);
-                    if (sessionObj.userId && sessionObj.expires > Date.now()) {
-                        currentUser = { ...USUARIOS[sessionObj.userId] };
-                    }
+            const session = localStorage.getItem('familia_session');
+            if (session) {
+                const sess = JSON.parse(session);
+                if (sess.userId && sess.expires > Date.now()) {
+                    currentUser = sess.userId === 'pai' ? 
+                        { id: 'pai', nome: 'Papai 👨', senha: 'pai123' } : 
+                        { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123' };
                 }
-            } catch(e) {}
+            }
+        } catch(e) {
+            console.error('Erro ao carregar:', e);
         }
-
-        function salvarAvatar(usuarioId, avatarData) {
-            try {
-                const avatars = JSON.parse(localStorage.getItem('familia_avatars') || '{}');
-                avatars[usuarioId] = avatarData;
-                localStorage.setItem('familia_avatars', JSON.stringify(avatars));
-            } catch(e) {}
+    }
+    
+    function salvarDados() {
+        try {
+            localStorage.setItem('familia_posts', JSON.stringify(posts));
+            console.log('Posts salvos:', posts.length);
+        } catch(e) {
+            console.error('Erro ao salvar:', e);
         }
-
-        function salvarSessao(userId, keep) {
-            try {
-                const expira = keep ? Date.now() + 30*24*60*60*1000 : Date.now() + 24*60*60*1000;
-                localStorage.setItem('familia_session', JSON.stringify({ userId: userId, expires: expira }));
-            } catch(e) {}
-        }
-
-        function limparSessao() {
-            localStorage.removeItem('familia_session');
-        }
-
-        // ==================== POSTAGEM ====================
-        function adicionarPost(tipo, dataUrl, legenda) {
-            const novoPost = {
-                id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
-                usuarioId: currentUser.id,
-                usuarioNome: currentUser.nome,
-                tipo: tipo,
-                dataUrl: dataUrl,
-                legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
-                data: new Date().toISOString(),
-                curtidas: [],
-                comentarios: []
-            };
-            posts.unshift(novoPost);
+    }
+    
+    function salvarSessao(userId, keep) {
+        const expira = keep ? Date.now() + 30*24*60*60*1000 : Date.now() + 24*60*60*1000;
+        localStorage.setItem('familia_session', JSON.stringify({ userId, expires: expira }));
+    }
+    
+    function limparSessao() {
+        localStorage.removeItem('familia_session');
+    }
+    
+    // ==================== POSTAGEM ====================
+    function adicionarPost(tipo, dataUrl, legenda) {
+        const novoPost = {
+            id: Date.now().toString(),
+            usuarioId: currentUser.id,
+            usuarioNome: currentUser.nome,
+            tipo: tipo,
+            dataUrl: dataUrl,
+            legenda: legenda || (tipo === 'foto' ? '📸 Nova foto!' : '🎥 Novo vídeo!'),
+            data: new Date().toISOString(),
+            curtidas: [],
+            comentarios: []
+        };
+        posts.unshift(novoPost);
+        salvarDados();
+        renderizarFeed();
+        console.log('Post adicionado:', novoPost);
+        return true;
+    }
+    
+    // ==================== INTERAÇÕES ====================
+    function curtirPost(postId) {
+        const post = posts.find(p => p.id === postId);
+        if (post) {
+            const idx = post.curtidas.indexOf(currentUser.id);
+            if (idx === -1) {
+                post.curtidas.push(currentUser.id);
+            } else {
+                post.curtidas.splice(idx, 1);
+            }
             salvarDados();
             renderizarFeed();
-            return true;
         }
-
-        function publicarArquivo(file, legenda) {
-            if (!file) {
-                alert('Selecione um arquivo');
+    }
+    
+    function comentarPost(postId) {
+        const input = document.getElementById(`comentarioInput-${postId}`);
+        const texto = input.value;
+        if (!texto.trim()) return;
+        
+        const post = posts.find(p => p.id === postId);
+        if (post) {
+            post.comentarios.push({
+                usuarioId: currentUser.id,
+                usuarioNome: currentUser.nome,
+                texto: texto.trim(),
+                data: new Date().toISOString()
+            });
+            salvarDados();
+            input.value = '';
+            renderizarFeed();
+        }
+    }
+    
+    function excluirPost(postId) {
+        const post = posts.find(p => p.id === postId);
+        if (post && post.usuarioId === currentUser.id) {
+            if (confirm('Excluir este post?')) {
+                posts = posts.filter(p => p.id !== postId);
+                salvarDados();
+                renderizarFeed();
+                alert('✅ Post excluído!');
+            }
+        }
+    }
+    
+    // ==================== UPLOAD ====================
+    function abrirModalUpload() {
+        const modalHtml = `
+            <div class="modal" id="uploadModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>📤 Nova Publicação</h3>
+                        <button onclick="fecharModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="upload-area" id="uploadArea">
+                            📸 Clique para selecionar foto ou vídeo
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*,video/*" style="display: none;">
+                        <div id="previewDiv"></div>
+                        <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..."></textarea>
+                        <button class="btn-publicar" id="publicarBtn">📤 Publicar</button>
+                        <button class="btn-close" onclick="fecharModal()">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        let selectedFile = null;
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewDiv = document.getElementById('previewDiv');
+        
+        uploadArea.onclick = () => fileInput.click();
+        
+        fileInput.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                const url = URL.createObjectURL(selectedFile);
+                const isVideo = selectedFile.type.startsWith('video/');
+                previewDiv.innerHTML = isVideo ? 
+                    `<video src="${url}" class="preview-img" controls></video>` :
+                    `<img src="${url}" class="preview-img">`;
+            }
+        };
+        
+        document.getElementById('publicarBtn').onclick = async () => {
+            if (!selectedFile) {
+                alert('Selecione um arquivo!');
                 return;
             }
             
-            if (file.size > 50 * 1024 * 1024) {
-                alert('Arquivo muito grande! Máximo 50MB.');
-                return;
-            }
+            const legenda = document.getElementById('legendaInput').value;
             
-            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-            
+            // Criar post diretamente com o arquivo
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
+                const tipo = selectedFile.type.startsWith('image/') ? 'foto' : 'video';
                 adicionarPost(tipo, e.target.result, legenda);
                 alert('✅ Publicado com sucesso!');
                 fecharModal();
+                URL.revokeObjectURL(URL.createObjectURL(selectedFile));
             };
-            reader.onerror = function() {
-                alert('❌ Erro ao ler o arquivo');
-            };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(selectedFile);
+        };
+    }
+    
+    function fecharModal() {
+        const modal = document.querySelector('.modal');
+        if (modal) modal.remove();
+    }
+    
+    // ==================== RENDERIZAÇÃO ====================
+    function formatarData(dataISO) {
+        const data = new Date(dataISO);
+        const diff = Date.now() - data;
+        const minutos = Math.floor(diff / 60000);
+        if (minutos < 1) return 'Agora';
+        if (minutos < 60) return `${minutos} min`;
+        if (minutos < 1440) return `${Math.floor(minutos / 60)} h`;
+        return data.toLocaleDateString('pt-BR');
+    }
+    
+    function renderizarFeed() {
+        const container = document.getElementById('feedContainer');
+        if (!container) return;
+        
+        if (posts.length === 0) {
+            container.innerHTML = '<div class="loading">📭 Nenhum post ainda. Clique no + para começar!</div>';
+            return;
         }
-
-        // ==================== CÂMERA ====================
-        async function abrirCamera(modo) {
-            isVideoMode = (modo === 'video');
-            
-            const modalHtml = `
-                <div class="modal" id="cameraModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>${isVideoMode ? '🎥 Gravar Vídeo' : '📸 Tirar Foto'}</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="camera-preview" id="cameraPreviewArea">
-                                <video id="cameraVideo" autoplay playsinline style="width: 100%; border-radius: 15px;"></video>
-                            </div>
-                            <div class="camera-action-buttons">
-                                ${isVideoMode ? 
-                                    `<button class="camera-action-btn btn-capture" id="btnStartStop">⏺️ Gravar</button>` :
-                                    `<button class="camera-action-btn btn-capture" id="btnCapture">📸 Tirar Foto</button>`
-                                }
-                                <button class="camera-action-btn btn-close" id="btnCloseCamera">❌ Fechar</button>
-                            </div>
-                        </div>
+        
+        container.innerHTML = posts.map(post => `
+            <div class="post">
+                <div class="post-header">
+                    <div class="post-avatar">${post.usuarioId === 'pai' ? '👨' : '👩'}</div>
+                    <div class="post-info">
+                        <div class="post-nome">${post.usuarioNome}</div>
+                        <div class="post-data">${formatarData(post.data)}</div>
                     </div>
+                    ${post.usuarioId === currentUser.id ? `<button onclick="excluirPost('${post.id}')" style="background:none; border:none; font-size:20px; cursor:pointer;">🗑️</button>` : ''}
                 </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' },
-                    audio: isVideoMode
-                });
-                cameraStream = stream;
-                const videoEl = document.getElementById('cameraVideo');
-                if (videoEl) videoEl.srcObject = stream;
-            } catch(err) {
-                alert('Erro ao acessar câmera: ' + err.message);
-                fecharModal();
-                return;
-            }
-            
-            if (isVideoMode) {
-                let recording = false;
-                const btn = document.getElementById('btnStartStop');
-                btn.onclick = () => {
-                    if (!recording) {
-                        videoChunks = [];
-                        videoRecorder = new MediaRecorder(cameraStream);
-                        videoRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
-                        videoRecorder.onstop = () => {
-                            const blob = new Blob(videoChunks, { type: 'video/mp4' });
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                fecharModal();
-                                abrirModalLegenda(e.target.result, 'video');
-                            };
-                            reader.readAsDataURL(blob);
-                        };
-                        videoRecorder.start();
-                        recording = true;
-                        btn.textContent = '⏹️ Parar';
-                        btn.style.background = '#dc3545';
-                    } else {
-                        videoRecorder.stop();
-                        recording = false;
-                        btn.textContent = '⏺️ Gravar';
-                        btn.style.background = '#28a745';
-                    }
-                };
-            } else {
-                document.getElementById('btnCapture').onclick = () => {
-                    const videoEl = document.getElementById('cameraVideo');
-                    const canvas = document.createElement('canvas');
-                    canvas.width = videoEl.videoWidth;
-                    canvas.height = videoEl.videoHeight;
-                    canvas.getContext('2d').drawImage(videoEl, 0, 0);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    fecharModal();
-                    abrirModalLegenda(dataUrl, 'foto');
-                };
-            }
-            
-            document.getElementById('btnCloseCamera').onclick = () => {
-                if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-                fecharModal();
-            };
-        }
-
-        function importarGaleria() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,video/*';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) abrirModalArquivo(file);
-                else alert('Selecione um arquivo');
-            };
-            input.click();
-        }
-
-        function abrirModalArquivo(file) {
-            const tipo = file.type.startsWith('image/') ? 'foto' : 'video';
-            const previewUrl = URL.createObjectURL(file);
-            
-            const modalHtml = `
-                <div class="modal" id="arquivoModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>${tipo === 'foto' ? '📸 Adicionar Foto' : '🎥 Adicionar Vídeo'}</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div style="text-align: center; margin-bottom: 15px;">
-                                ${tipo === 'foto' 
-                                    ? `<img src="${previewUrl}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`
-                                    : `<video src="${previewUrl}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`
-                                }
-                            </div>
-                            <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
-                            <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
-                        </div>
-                    </div>
+                <div class="post-media">
+                    ${post.tipo === 'foto' 
+                        ? `<img src="${post.dataUrl}" loading="lazy" onerror="this.src='https://picsum.photos/400/400?error=1'">` 
+                        : `<video src="${post.dataUrl}" controls></video>`}
                 </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            document.getElementById('confirmarPublicar').onclick = () => {
-                const legenda = document.getElementById('legendaInput').value;
-                publicarArquivo(file, legenda);
-                URL.revokeObjectURL(previewUrl);
-            };
-        }
-
-        function abrirModalLegenda(dataUrl, tipo) {
-            const modalHtml = `
-                <div class="modal" id="legendaModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>${tipo === 'foto' ? '📸 Adicionar Foto' : '🎥 Adicionar Vídeo'}</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div style="text-align: center; margin-bottom: 15px;">
-                                ${tipo === 'foto' 
-                                    ? `<img src="${dataUrl}" style="max-width: 100%; max-height: 200px; border-radius: 15px;">`
-                                    : `<video src="${dataUrl}" controls style="max-width: 100%; max-height: 200px; border-radius: 15px;"></video>`
-                                }
-                            </div>
-                            <textarea id="legendaInput" rows="3" placeholder="Escreva uma legenda..." style="width: 100%; padding: 12px; border-radius: 15px; border: 1px solid #ddd; margin: 10px 0;"></textarea>
-                            <button class="login-btn" id="confirmarPublicar">📤 Publicar</button>
-                        </div>
-                    </div>
+                ${post.legenda ? `<div class="post-legenda">💬 ${escapeHtml(post.legenda)}</div>` : ''}
+                <div class="post-actions">
+                    <button class="action-btn ${post.curtidas.includes(currentUser.id) ? 'liked' : ''}" onclick="curtirPost('${post.id}')">
+                        ❤️ ${post.curtidas.length}
+                    </button>
+                    <button class="action-btn" onclick="document.getElementById('comentarioInput-${post.id}').focus()">
+                        💬 ${post.comentarios.length}
+                    </button>
                 </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            document.getElementById('confirmarPublicar').onclick = () => {
-                const legenda = document.getElementById('legendaInput').value;
-                adicionarPost(tipo, dataUrl, legenda);
-                alert('✅ Publicado com sucesso!');
-                fecharModal();
-            };
-        }
-
-        // ==================== INTERAÇÕES ====================
-        function curtirPost(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (post) {
-                const idx = post.curtidas.indexOf(currentUser.id);
-                if (idx === -1) {
-                    post.curtidas.push(currentUser.id);
-                    criarChuvaEmojis();
-                } else {
-                    post.curtidas.splice(idx, 1);
-                }
-                salvarDados();
-                renderizarFeed();
-            }
-        }
-
-        function comentarPost(postId, texto) {
-            if (!texto.trim()) return;
-            const post = posts.find(p => p.id === postId);
-            if (post) {
-                post.comentarios.push({
-                    usuarioId: currentUser.id,
-                    usuarioNome: currentUser.nome,
-                    texto: texto.trim(),
-                    data: new Date().toISOString()
-                });
-                salvarDados();
-                renderizarFeed();
-            }
-        }
-
-        function excluirPost(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (post && post.usuarioId === currentUser.id) {
-                if (confirm('Excluir este post?')) {
-                    posts = posts.filter(p => p.id !== postId);
-                    salvarDados();
-                    renderizarFeed();
-                }
-            }
-        }
-
-        // ==================== LIVE ====================
-        async function iniciarLive() {
-            liveActive = true;
-            liveMessages = [];
-            liveLikes = 0;
-            liveChunks = [];
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                const videoEl = document.getElementById('liveVideoElement');
-                if (videoEl) videoEl.srcObject = stream;
-                liveStream = stream;
-                
-                liveRecorder = new MediaRecorder(stream);
-                liveRecorder.ondataavailable = (e) => { if (e.data.size > 0) liveChunks.push(e.data); };
-                liveRecorder.start(2000);
-            } catch(err) {
-                alert('Erro: ' + err.message);
-                liveActive = false;
-            }
+                <div class="comentarios-area">
+                    ${post.comentarios.slice(-2).map(c => `
+                        <div class="comentario"><strong>${escapeHtml(c.usuarioNome)}:</strong> ${escapeHtml(c.texto)}</div>
+                    `).join('')}
+                </div>
+                <div class="add-comentario">
+                    <input type="text" id="comentarioInput-${post.id}" placeholder="Escreva um comentário...">
+                    <button onclick="comentarPost('${post.id}')">Enviar</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // ==================== LOGIN ====================
+    function login() {
+        const perfil = document.getElementById('perfilSelecionado').value;
+        const senha = document.getElementById('senha').value;
+        const keep = document.getElementById('keepLogged').checked;
+        
+        if (perfil === 'pai' && senha === 'pai123') {
+            currentUser = { id: 'pai', nome: 'Papai 👨', senha: 'pai123' };
+            salvarSessao('pai', keep);
             renderizarApp();
-            setTimeout(() => addLiveMsg('🎥 Live iniciada!', 'Sistema'), 500);
-        }
-
-        function encerrarLive() {
-            if (liveRecorder && liveRecorder.state === 'recording') liveRecorder.stop();
-            if (liveStream) liveStream.getTracks().forEach(t => t.stop());
-            liveActive = false;
+        } else if (perfil === 'mae' && senha === 'mae123') {
+            currentUser = { id: 'mae', nome: 'Mamãe 👩', senha: 'mae123' };
+            salvarSessao('mae', keep);
             renderizarApp();
+        } else {
+            alert('❌ Senha incorreta!\n\nPapai: pai123\nMamãe: mae123');
         }
-
-        function addLiveMsg(texto, usuario = null) {
-            liveMessages.push({ usuario: usuario || currentUser.nome, texto: texto, hora: new Date().toLocaleTimeString() });
-            renderizarLiveChat();
-        }
-
-        function curtirLive() {
-            liveLikes++;
-            criarChuvaEmojis();
-            const likesSpan = document.getElementById('liveLikesSpan');
-            if (likesSpan) likesSpan.textContent = liveLikes;
-        }
-
-        function salvarLive() {
-            if (liveChunks.length === 0) { alert('Aguarde alguns segundos'); return; }
-            const blob = new Blob(liveChunks, { type: 'video/mp4' });
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                adicionarPost('video', e.target.result, `Live gravada 🔴 - ${liveMessages.length} msgs, ${liveLikes} likes`);
-                alert('✅ Live salva!');
-                encerrarLive();
-                activeTab = 'feed';
-                renderizarApp();
-            };
-            reader.readAsDataURL(blob);
-        }
-
-        function renderizarLiveChat() {
-            const chat = document.getElementById('liveChat');
-            if (chat) {
-                chat.innerHTML = liveMessages.map(m => `<div class="live-message"><strong>${m.usuario}:</strong> ${m.texto}</div>`).join('');
-                chat.scrollTop = chat.scrollHeight;
-            }
-        }
-
-        // ==================== PERFIL ====================
-        function modalPerfil() {
-            const modalHtml = `
-                <div class="modal" id="perfilModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>⚙️ Configurações</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <div class="post-avatar" style="width: 80px; height: 80px; font-size: 50px; margin: 0 auto;">
-                                    ${currentUser.avatarImg ? `<img src="${currentUser.avatarImg}" style="width: 80px; height: 80px; border-radius: 40px;">` : (currentUser.avatar || '👨')}
-                                </div>
-                                <h3>${currentUser.nome}</h3>
-                            </div>
-                            <button class="login-btn" id="btnAlterarSenha">🔐 Alterar Senha</button>
-                            <button class="login-btn" id="btnAvatar" style="margin-top: 10px; background: #6c757d;">🖼️ Mudar Avatar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('btnAlterarSenha').onclick = () => { fecharModal(); modalAlterarSenha(); };
-            document.getElementById('btnAvatar').onclick = () => { fecharModal(); modalAvatar(); };
-        }
-
-        function modalAlterarSenha() {
-            const modalHtml = `
-                <div class="modal" id="senhaModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>🔐 Alterar Senha</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="password" id="atual" class="modal-input" placeholder="Senha atual">
-                            <input type="password" id="nova" class="modal-input" placeholder="Nova senha (4+ caracteres)">
-                            <input type="password" id="confirmar" class="modal-input" placeholder="Confirmar nova senha">
-                            <button class="login-btn" id="confirmarBtn">✅ Alterar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('confirmarBtn').onclick = () => {
-                const atual = document.getElementById('atual').value;
-                const nova = document.getElementById('nova').value;
-                const confirmar = document.getElementById('confirmar').value;
-                if (atual !== currentUser.senha) { alert('Senha atual incorreta'); return; }
-                if (nova !== confirmar) { alert('Senhas não coincidem'); return; }
-                if (nova.length < 4) { alert('Mínimo 4 caracteres'); return; }
-                currentUser.senha = nova;
-                USUARIOS[currentUser.id].senha = nova;
-                try { localStorage.setItem('familia_passwords', JSON.stringify({ pai: USUARIOS.pai.senha, mae: USUARIOS.mae.senha })); } catch(e) {}
-                alert('✅ Senha alterada!');
-                fecharModal();
-            };
-        }
-
-        function modalAvatar() {
-            const emojis = ['👨', '👩', '👧', '👦', '👵', '👴', '🐶', '🐱', '🌸', '⭐', '❤️', '😊', '🥰', '💕'];
-            const modalHtml = `
-                <div class="modal" id="avatarModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>🖼️ Escolha seu Avatar</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="avatar-options">
-                                ${emojis.map(e => `<div class="avatar-option" data-avatar="${e}">${e}</div>`).join('')}
-                            </div>
-                            <div class="upload-avatar" id="uploadAvatarBtn">📁 Enviar foto da galeria</div>
-                            <input type="file" id="avatarFile" accept="image/*" style="display: none;">
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.querySelectorAll('[data-avatar]').forEach(el => {
-                el.onclick = () => {
-                    currentUser.avatar = el.dataset.avatar;
-                    currentUser.avatarImg = null;
-                    USUARIOS[currentUser.id].avatar = el.dataset.avatar;
-                    USUARIOS[currentUser.id].avatarImg = null;
-                    salvarAvatar(currentUser.id, null);
-                    fecharModal();
-                    renderizarApp();
-                };
-            });
-            document.getElementById('uploadAvatarBtn').onclick = () => document.getElementById('avatarFile').click();
-            document.getElementById('avatarFile').onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        currentUser.avatarImg = ev.target.result;
-                        currentUser.avatar = null;
-                        USUARIOS[currentUser.id].avatarImg = ev.target.result;
-                        USUARIOS[currentUser.id].avatar = null;
-                        salvarAvatar(currentUser.id, ev.target.result);
-                        fecharModal();
-                        renderizarApp();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-        }
-
-        // ==================== RENDERIZAÇÃO ====================
-        function formatarData(dataISO) {
-            const data = new Date(dataISO);
-            const diff = Date.now() - data;
-            const minutos = Math.floor(diff / 60000);
-            if (minutos < 1) return 'Agora';
-            if (minutos < 60) return `${minutos} min`;
-            if (minutos < 1440) return `${Math.floor(minutos / 60)} h`;
-            return data.toLocaleDateString('pt-BR');
-        }
-
-        function renderizarFeed() {
-            const container = document.getElementById('feedContainer');
-            if (!container) return;
-            if (posts.length === 0) { container.innerHTML = '<div class="loading">📭 Nenhum post. Clique no +</div>'; return; }
-            
-            container.innerHTML = posts.map(post => {
-                const usuario = post.usuarioId === 'pai' ? USUARIOS.pai : USUARIOS.mae;
-                return `
-                    <div class="post">
-                        <div class="post-header">
-                            <div class="post-avatar">
-                                ${usuario.avatarImg ? `<img src="${usuario.avatarImg}" class="post-avatar-img">` : `<div style="font-size: 25px;">${usuario.avatar || '👤'}</div>`}
-                            </div>
-                            <div class="post-info">
-                                <div class="post-nome">${post.usuarioNome}</div>
-                                <div class="post-data">${formatarData(post.data)}</div>
-                            </div>
-                            ${post.usuarioId === currentUser.id ? `<button class="icon-btn" onclick="excluirPost('${post.id}')">⋯</button>` : ''}
-                        </div>
-                        <div class="post-media">
-                            ${post.tipo === 'foto' ? `<img src="${post.dataUrl}" loading="lazy">` : `<video src="${post.dataUrl}" controls></video>`}
-                            ${post.isLiveRecording ? '<div class="live-badge-post">🔴 LIVE</div>' : ''}
-                        </div>
-                        ${post.legenda ? `<div class="post-legenda">💬 ${post.legenda}</div>` : ''}
-                        <div class="post-actions">
-                            <button class="action-btn ${post.curtidas.includes(currentUser.id) ? 'liked' : ''}" onclick="curtirPost('${post.id}')">❤️ ${post.curtidas.length}</button>
-                            <button class="action-btn" onclick="focarComentario('${post.id}')">💬 ${post.comentarios.length}</button>
-                        </div>
-                        <div class="comentarios-area" id="comentarios-${post.id}">
-                            ${post.comentarios.slice(-2).map(c => `<div class="comentario"><strong>${c.usuarioNome}:</strong> ${c.texto}</div>`).join('')}
-                        </div>
-                        <div class="add-comentario">
-                            <input type="text" id="comentarioInput-${post.id}" placeholder="Comentário...">
-                            <button onclick="comentarPost('${post.id}', document.getElementById('comentarioInput-${post.id}').value)">Enviar</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function focarComentario(postId) {
-            const input = document.getElementById(`comentarioInput-${postId}`);
-            if (input) input.focus();
-        }
-
-        function renderizarLive() {
-            if (!liveActive) {
-                return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 30px;">
-                    <div style="font-size: 80px;">📹</div>
-                    <h3>Live da Família</h3>
-                    <p style="color: #666; margin-bottom: 30px;">Compartilhe momentos em tempo real</p>
-                    <button class="login-btn" onclick="iniciarLive()" style="width: auto; padding: 15px 30px;">🔴 Iniciar Live</button>
-                </div>`;
-            }
-            return `
-                <div class="live-container">
-                    <div class="live-video"><video id="liveVideoElement" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video></div>
-                    <div class="live-info"><div class="live-badge">🔴 AO VIVO</div><div style="color:white;">❤️ <span id="liveLikesSpan">${liveLikes}</span></div></div>
-                    <div class="live-actions">
-                        <button onclick="curtirLive()">❤️</button>
-                        <button onclick="salvarLive()" style="background:#28a745;">💾</button>
-                        <button onclick="encerrarLive()">🔴</button>
-                    </div>
-                    <div class="live-chat" id="liveChat">${liveMessages.map(m => `<div class="live-message"><strong>${m.usuario}:</strong> ${m.texto}</div>`).join('')}</div>
-                    <div class="live-input-area">
-                        <input type="text" class="live-input" id="liveInput" placeholder="Digite uma mensagem...">
-                        <button onclick="addLiveMsg(document.getElementById('liveInput').value); document.getElementById('liveInput').value='';">Enviar</button>
-                    </div>
-                </div>`;
-            }
-
-        function renderizarApp() {
-            const appDiv = document.getElementById('app');
-            
-            if (!currentUser) {
-                appDiv.innerHTML = `
-                    <div class="login-screen">
-                        <div class="login-box">
-                            <h1>📱 Família Connect</h1>
-                            <div class="perfil-selector" id="perfilSelector">
-                                <div class="perfil-card" data-perfil="pai"><span class="perfil-avatar">👨</span><span class="perfil-nome">Papai</span></div>
-                                <div class="perfil-card" data-perfil="mae"><span class="perfil-avatar">👩</span><span class="perfil-nome">Mamãe</span></div>
-                            </div>
-                            <input type="password" id="senha" class="input-senha" placeholder="Digite sua senha">
-                            <div class="checkbox-area"><input type="checkbox" id="keepLogged"><label>Manter-me conectado</label></div>
-                            <button class="login-btn" id="loginBtn">✨ Entrar ✨</button>
-                            <div style="margin-top:20px;text-align:center;font-size:12px;color:#999;">👨 pai123 | 👩 mae123</div>
-                        </div>
-                    </div>
-                `;
-                let perfilSelecionado = 'pai';
-                document.querySelectorAll('[data-perfil]').forEach(el => {
-                    el.onclick = () => { document.querySelectorAll('[data-perfil]').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); perfilSelecionado = el.dataset.perfil; };
-                });
-                document.querySelector('[data-perfil="pai"]').classList.add('selected');
-                document.getElementById('loginBtn').onclick = () => {
-                    const senha = document.getElementById('senha').value;
-                    const keep = document.getElementById('keepLogged').checked;
-                    const usuario = USUARIOS[perfilSelecionado];
-                    if (usuario && usuario.senha === senha) {
-                        currentUser = { ...usuario };
-                        salvarSessao(usuario.id, keep);
-                        renderizarApp();
-                    } else alert('Senha incorreta!');
-                };
-                return;
-            }
-            
-            let conteudo = '';
-            if (activeTab === 'live') conteudo = renderizarLive();
-            else conteudo = `
-                <div class="feed-header">
-                    <div class="logo-area"><h2>📱 Família Connect</h2><span class="online-badge"></span></div>
-                    <div class="header-actions">
-                        <button class="icon-btn" onclick="modalPerfil()">⚙️</button>
-                        <button class="icon-btn" onclick="logout()">🚪</button>
-                    </div>
-                </div>
-                <div class="main-content"><div id="feedContainer"></div></div>
-                <button class="fab" id="fabBtn">+</button>
-            `;
-            
-            appDiv.innerHTML = conteudo + `
-                <div class="bottom-nav">
-                    <div class="nav-item ${activeTab === 'feed' ? 'active' : ''}" data-tab="feed"><div class="nav-icon">📱</div><div>Feed</div></div>
-                    <div class="nav-item ${activeTab === 'live' ? 'active' : ''}" data-tab="live"><div class="nav-icon">📹</div><div>Live</div></div>
-                </div>
-            `;
-            
-            document.querySelectorAll('[data-tab]').forEach(el => {
-                el.onclick = () => { activeTab = el.dataset.tab; renderizarApp(); };
-            });
-            
-            if (activeTab === 'feed') {
-                renderizarFeed();
-                document.getElementById('fabBtn').onclick = () => abrirModalCriacao();
-            }
-        }
-
-        function abrirModalCriacao() {
-            const modalHtml = `
-                <div class="modal" id="criarModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>Nova publicação</h3>
-                            <button class="icon-btn" onclick="window.fecharModal()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="camera-buttons">
-                                <button class="camera-btn" id="btnFoto">📸 Tirar Foto</button>
-                                <button class="camera-btn" id="btnVideo">🎥 Gravar Vídeo</button>
-                            </div>
-                            <div class="upload-avatar" id="importarBtn">📁 Importar da Galeria</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('btnFoto').onclick = () => { fecharModal(); abrirCamera('foto'); };
-            document.getElementById('btnVideo').onclick = () => { fecharModal(); abrirCamera('video'); };
-            document.getElementById('importarBtn').onclick = () => { fecharModal(); importarGaleria(); };
-        }
-
-        function fecharModal() {
-            if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-            document.querySelectorAll('.modal').forEach(m => m.remove());
-        }
-
-        function logout() {
-            currentUser = null;
-            limparSessao();
-            renderizarApp();
-        }
-
-        window.fecharModal = fecharModal;
-        window.curtirPost = curtirPost;
-        window.comentarPost = comentarPost;
-        window.excluirPost = excluirPost;
-        window.focarComentario = focarComentario;
-        window.modalPerfil = modalPerfil;
-        window.modalAlterarSenha = modalAlterarSenha;
-        window.modalAvatar = modalAvatar;
-        window.iniciarLive = iniciarLive;
-        window.encerrarLive = encerrarLive;
-        window.curtirLive = curtirLive;
-        window.salvarLive = salvarLive;
-        window.addLiveMsg = addLiveMsg;
-        window.logout = logout;
-
-        carregarDados();
+    }
+    
+    function logout() {
+        currentUser = null;
+        limparSessao();
         renderizarApp();
-    </script>
+    }
+    
+    // ==================== TELA PRINCIPAL ====================
+    function renderizarApp() {
+        const appDiv = document.getElementById('app');
+        
+        if (!currentUser) {
+            // Tela de login
+            appDiv.innerHTML = `
+                <div class="login-screen">
+                    <div class="login-box">
+                        <h1>📱 Família Connect</h1>
+                        <div class="perfil-selector" id="perfilSelector">
+                            <div class="perfil-card" data-perfil="pai">
+                                <span class="perfil-avatar">👨</span>
+                                <span class="perfil-nome">Papai</span>
+                            </div>
+                            <div class="perfil-card" data-perfil="mae">
+                                <span class="perfil-avatar">👩</span>
+                                <span class="perfil-nome">Mamãe</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="perfilSelecionado" value="pai">
+                        <input type="password" id="senha" class="input-senha" placeholder="Digite sua senha">
+                        <div class="checkbox-area">
+                            <input type="checkbox" id="keepLogged">
+                            <label>Manter-me conectado</label>
+                        </div>
+                        <button class="login-btn" onclick="login()">✨ Entrar ✨</button>
+                        <div style="margin-top:20px;text-align:center;font-size:12px;color:#999;">
+                            👨 Papai: pai123 | 👩 Mamãe: mae123
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Selecionar perfil
+            let perfilSelecionado = 'pai';
+            document.querySelectorAll('[data-perfil]').forEach(el => {
+                el.onclick = () => {
+                    document.querySelectorAll('[data-perfil]').forEach(e => e.classList.remove('selected'));
+                    el.classList.add('selected');
+                    perfilSelecionado = el.dataset.perfil;
+                    document.getElementById('perfilSelecionado').value = perfilSelecionado;
+                };
+            });
+            document.querySelector('[data-perfil="pai"]').classList.add('selected');
+            return;
+        }
+        
+        // Tela principal
+        appDiv.innerHTML = `
+            <div class="feed-header">
+                <h2>📱 Família Connect</h2>
+                <div>
+                    <span style="margin-right:15px;">👤 ${currentUser.nome}</span>
+                    <button onclick="logout()" style="background:none; border:none; font-size:20px; cursor:pointer;">🚪</button>
+                </div>
+            </div>
+            <div class="main-content">
+                <div id="feedContainer"></div>
+            </div>
+            <button class="fab" onclick="abrirModalUpload()">+</button>
+        `;
+        
+        renderizarFeed();
+    }
+    
+    // Expor funções globalmente
+    window.login = login;
+    window.logout = logout;
+    window.curtirPost = curtirPost;
+    window.comentarPost = comentarPost;
+    window.excluirPost = excluirPost;
+    window.abrirModalUpload = abrirModalUpload;
+    window.fecharModal = fecharModal;
+    
+    // Iniciar app
+    carregarDados();
+    renderizarApp();
+</script>
 </body>
 </html>
